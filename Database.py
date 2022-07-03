@@ -22,7 +22,12 @@ class DatabaseManager:
         except Exception as ex:
             print("[INFO] Error while working with PostgreSQL", ex)
 
-    def get_all_users(self) -> list:
+    def get_user_description_by_ip(self, ip) -> str:
+        self.check_connection()
+        self.cursor.execute(f"SELECT description FROM customer WHERE last_ip = {ip}")
+        return self.cursor.fetchone()[0]
+
+    def get_all_users(self) -> list[DBUser]:
         self.check_connection()
         self.cursor.execute("SELECT description, publickey, privatekey, last_ip FROM customer ORDER BY id;")
         data = self.cursor.fetchall()

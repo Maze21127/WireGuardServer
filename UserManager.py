@@ -2,7 +2,7 @@ from Database import DatabaseManager
 from exceptions import *
 import os
 import time
-from settings import WG_PUBLIC_KEY, WG_ENDPOINT
+from settings import WG_PUBLIC_KEY, WG_ENDPOINT, WG_PRIVATE_KEY
 from Entities import *
 
 
@@ -28,7 +28,31 @@ class UserManager:
         self._user = None
 
     def delete_user_by_ip(self, ip: int):
+        description = self._database.get_user_description_by_ip(ip)
         self._database.delete_user_by_ip(ip)
+        self._delete_user_config(description)
+        self._reformat_config_file()
+
+    @staticmethod
+    def _create_config_file():
+        """Delete old file and create new with header"""
+        os.remove("../wg0.conf")
+        with open("../wg0.conf", "a") as file:
+            file.write("[Interface]\n")
+            file.write(f"PrivateKey = {WG_PRIVATE_KEY}\n")
+            file.write("Address = 10.0.0.1/24\n")
+            file.write("ListenPort = 51830\n")
+            file.write("PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ens3 -j "
+                       "MASQUERADE\n")
+            file.write("PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j "
+                       "MASQUERADE\n\n")
+
+    def _reformat_config_file(self):
+        self._create_config_file()
+        for user in self._database.get_all_users():
+            key_pair = KeyPair(user.private_key, user.public_key)
+            self._user = User(user.description, key_pair, user.ip)
+            self._add_user_to_config()
 
     def create_user(self, description: str):
         self._user = User(description, get_user_keypair(), self._database.get_free_ip())
@@ -57,8 +81,17 @@ class UserManager:
             file.write("AllowedIPs = 0.0.0.0/0\n")
             file.write("PersistentKeepalive = 20\n")
 
+    @staticmethod
+    def _delete_user_config(description: str):
+        file = f'configs/{description}.conf'
+        print(file)
+        if not os.path.exists(file):
+            print("User not already exists")
+            raise FileExistsError("File not exists")
+        os.remove(file)
+
     def _add_user_to_config(self):
-        with open("wg0.conf", "a") as file:
+        with open("../wg0.conf", "a") as file:
             file.write("\n[Peer]\n")
             file.write(f"# {self._user.description}\n")
             file.write(f"PublicKey = {self._user.key_pair.public_key}\n")
@@ -73,13 +106,3 @@ class UserManager:
         except NoCursor as ex:
             print("[INFO] ", ex)
             return
-
-
-if __name__ == "__main__":
-    manager = UserManager()
-    manager.create_database_connection()
-    #manager.create_user("Test123456")
-    manager.delete_user_by_ip(11)
-    manager.delete_user_by_ip(12)
-    for usr in manager._database.get_all_users():
-        print(usr)
