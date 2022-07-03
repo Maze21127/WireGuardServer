@@ -47,6 +47,11 @@ class UserManager:
             file.write("PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j "
                        "MASQUERADE\n\n")
 
+    def create_config_file_by_ip(self, ip: int):
+        self._user = self._database.get_user_by_ip(ip)
+        self._create_user_config()
+        print(f"[INFO] config file for user with ip {ip} created successfully")
+
     def _reformat_config_file(self):
         self._create_config_file()
         for user in self._database.get_all_users():

@@ -56,6 +56,12 @@ class DatabaseManager:
         self.connection.commit()
         print(f"User with ip: {ip} was deleted")
 
+    def get_user_by_ip(self, ip: int) -> User:
+        self.check_connection()
+        self.cursor.execute(f"SELECT description, publickey, privatekey, last_ip FROM customer WHERE last_ip = {ip}")
+        data = self.cursor.fetchone()
+        return User(data[0], KeyPair(public_key=data[1], private_key=data[2]), data[3])
+
     def get_free_ip(self) -> int:
         self.check_connection()
         self.cursor.execute("SELECT last_ip from customer;")
