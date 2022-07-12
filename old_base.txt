@@ -1,0 +1,30 @@
+ id |       description        |                   publickey                   |                  privatekey                  | last_ip
+----+--------------------------+-----------------------------------------------+----------------------------------------------+---------
+  1 | Kulkov Vladimir          | um/+yJEyPJcAOZ0uT9dBoZMmZhdqMCfk3IohtotZ4kQ=  | 4HoeqqMdqFI9bGULfcMWNAZjXJJ87P2Q+usjVQN7sUA= |       2
+  3 | Holodova Polina          | M3Ow0eFRraeZghi78nbMAuPd49u2Oe76ClCb3R86bWY=  | 6KFbGdiDfXi2Yf5zrixy0Imds0wTkKMggpqh11qj4Uc= |       4
+  4 | Kulkov Vladimir PC       | 9yZ0yq2f98b5H8nAoU8J+3V0Th3qeVnK6eo29F1gViA=  | mDFoyaE26s6fF7Vi4bKsP/S4IEmsEnIhpWYmzxjgqH8= |       5
+  5 | Victor Vinogradov mobile | hUh9trVBKN+dMErF0pZnPRrjnRGBTvyGi727U+W/Egs=  | AIH9gRIzHqEoVpjnmz/ZvDRyVrBb8728QN2YPxCucE8= |       6
+  6 | Victor Vinogradov pc     | 58PUOEf9g2SqLni9Mjy2nQly5AnQwiyDxABRKB90SEM=  | UIaxDj3wv8O++en21Twfcv//k+eGd4fAOE0U8nGDzWs= |       7
+  7 | Elena Vinogradova        | phn6xlnH9GLSOguCkdmUHqKzJ0IxiPHfsX1LogYfWCs=  | wE1oh4bnUa2niKChfk4KdX/xpYPpVQhf6w2kD/ueekk= |       8
+  8 | Konstantin Kulkov        | AYzFUt89a3izTB5F+rMXHsmQ8/xm4cavUj2j+Ylrv0s=  | uMiqkIxqIthOhXnluCRpBjPSKaP+FgMzE4q8e/Icc0c= |       9
+  9 | Gamolin Oleg             | kNyB8lB9d/a5iuz+ciPdN+5tFMd7l11DQPrhj2qRfFg=  | 6Aj92O8DjSZRvEwOUDdFJqjumVkCYXvSu3nHFjIqpFs= |      10
+  2 | Fedotenkova Valeria      | PoEVOHRUqeuR8iZxRFpckhSTjzlHvZQWoklH21UbBn8=  | iEpUP373jw55KHoVOqeEd2nD2MiJCvQJlgmkZSR2P18= |       3
+ 24 | Fedya Korshunov mobile   | kIrYCs5knOQqWjUfl0dg+C8DdFhYFS5Gsuyy6AES7WM=  | eCx2J8Qa14+UjhpRhLEgmJUJU2E8yXJj2amWxdVysEM= |      11
+
+
+
+insert into wg_user(publickey, privatekey, allowed_ip) values ('kIrYCs5knOQqWjUfl0dg+C8DdFhYFS5Gsuyy6AES7WM=', 'eCx2J8Qa14+UjhpRhLEgmJUJU2E8yXJj2amWxdVysEM=', 11);
+
+update wg_user SET publickey = 'M3Ow0eFRraeZghi78nbMAuPd49u2Oe76ClCb3R86bWY=', privatekey = '6KFbGdiDfXi2Yf5zrixy0Imds0wTkKMggpqh11qj4Uc=' where allowed_ip = 4;
+
+
+
+
+Добавление пользователя ТГ
+insert into tg_user(tg_id, subscription_end_date, active) values (804339009, NOW() + INTERVAL '29 DAY', true);
+
+Добавление в таблицу конфига
+insert into config(name, allowed_ip, tg_id) values ('iPhone', 4, 804339009);
+
+Таблица name, allowed_ip, tg_id, publickey, privatekey
+select c.*, wg.publickey, wg.privatekey from config c left join wg_user wg on c.allowed_ip=wg.allowed_ip;
