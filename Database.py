@@ -34,7 +34,6 @@ class DatabaseManager:
     def get_all_users(self) -> list[DBUser]:
         self.check_connection()
         self.cursor.execute(f"SELECT c.*, wg.publickey, wg.privatekey FROM config c LEFT JOIN wg_user wg ON c.allowed_ip=wg.allowed_ip;")
-        #self.cursor.execute("SELECT description, publickey, privatekey, last_ip FROM customer ORDER BY id;")
         data = self.cursor.fetchall()
         users = []
         for user_data in data:
@@ -59,7 +58,7 @@ class DatabaseManager:
         self.cursor.execute(f"SELECT allowed_ip FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
         ip = self.cursor.fetchone()[0]
         self.cursor.execute(f"DELETE FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
-        self.cursor.execute(f"DELETE FROM wg_user WHERE allowed_id = {ip}")
+        self.cursor.execute(f"DELETE FROM wg_user WHERE allowed_ip = {ip}")
         self.connection.commit()
 
     def delete_user_by_ip(self, ip: int):
@@ -78,7 +77,6 @@ class DatabaseManager:
         self.check_connection()
         self.cursor.execute(f"SELECT allowed_ip FROM config WHERE tg_id = {tg_id} AND name = '{name}'")
         ip = self.cursor.fetchone()[0]
-        print(ip)
         self.cursor.execute(f"SELECT publickey, privatekey FROM wg_user WHERE allowed_ip = {ip}")
         data = self.cursor.fetchone()
         return User(name, KeyPair(public_key=data[0], private_key=data[1]), ip)
