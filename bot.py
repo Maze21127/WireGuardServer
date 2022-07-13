@@ -175,6 +175,7 @@ async def callback(event):
             await conv.send_message("Файл конфигурации успешно создан")
             await bot.send_file(event.chat_id, qr_code)
             await bot.send_file(event.chat_id, config)
+            print(f"Файл конфигурации отправлен пользователю {event.peer_id.user_id}")
             manager.delete_user_config(config_name)
             break
     await event.respond("Выберите действие", buttons=configs_keyboard)
@@ -202,6 +203,7 @@ async def callback(event):
 
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
         await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
+        print(f"Файл конфигурации {answer_message} удален пользователем {event.peer_id.user_id}")
         break
 
 

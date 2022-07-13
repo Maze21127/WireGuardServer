@@ -57,6 +57,7 @@ class DatabaseManager:
                             f"'{user.allowed_IP}',"
                             f"'{tg_id}')")
         self.connection.commit()
+        print(f"Config {user.config_name}/{tg_id} создан")
 
     def delete_config_by_name(self, name: str, tg_id: int):
         self.check_connection()
@@ -65,18 +66,7 @@ class DatabaseManager:
         self.cursor.execute(f"DELETE FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
         self.cursor.execute(f"DELETE FROM wg_user WHERE allowed_ip = {ip}")
         self.connection.commit()
-
-    # def delete_user_by_ip(self, ip: int):
-    #     self.check_connection()
-    #     self.cursor.execute(f"DELETE FROM customer WHERE last_ip = {ip}")
-    #     self.connection.commit()
-    #     print(f"User with ip: {ip} was deleted")
-    #
-    # def get_user_by_ip(self, ip: int) -> User:
-    #     self.check_connection()
-    #     self.cursor.execute(f"SELECT description, publickey, privatekey, last_ip FROM customer WHERE last_ip = {ip}")
-    #     data = self.cursor.fetchone()
-    #     return User(data[0], KeyPair(public_key=data[1], private_key=data[2]), data[3])
+        print(f"Config {name}/{tg_id} удален")
 
     def get_user_by_name(self, name: str, tg_id: int):
         self.check_connection()
