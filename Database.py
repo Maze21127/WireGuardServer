@@ -22,6 +22,10 @@ class DatabaseManager:
         except Exception as ex:
             print("[INFO] Error while working with PostgreSQL", ex)
 
+    def get_configs_list_for_user(self, tg_id: int):
+        self.cursor.execute(f"""SELECT name FROM config WHERE tg_id = {tg_id}""")
+        return self.cursor.fetchall()
+
     def get_user_description_by_ip(self, ip) -> str:
         self.check_connection()
         self.cursor.execute(f"SELECT description FROM customer WHERE last_ip = {ip}")

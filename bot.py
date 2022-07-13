@@ -1,12 +1,13 @@
 import asyncio
-import os
 from datetime import datetime
-
+from UserManager import UserManager
 from telethon import TelegramClient, events, Button
 
 from settings import *
 
 bot = TelegramClient("WireGuardVPN", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+manager = UserManager()
+manager.create_database_connection()
 
 
 instruction = "Инструкция"
@@ -15,7 +16,6 @@ configurations = "Конфигурации"
 create_configuration = "Создать конфигурационный файл"
 show_configurations = "Показать мои конфигурации"
 create_new_configuration = "Создать новую конфигурацию"
-configs = os.listdir("configs")  # TODO: Конфигурации будут браться из базы данных для каждого пользователя
 main_menu = "Основное меню"
 support = "Написать в поддержку"
 
@@ -77,6 +77,7 @@ async def callback(event):
 
 @bot.on(events.NewMessage(pattern=show_configurations))
 async def callback(event):
+    configs = manager.get_configs_list_for_user(event.peer_id.user_id)
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
     await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_buttons)
@@ -103,6 +104,7 @@ async def callback(event):
 
 @bot.on(events.NewMessage(pattern=create_new_configuration))
 async def callback(event):
+    configs = manager.get_configs_list_for_user(event.peer_id.user_id)
     if len(configs) == 1:
         await bot.send_message(event.chat_id, "У вас уже максимальное количество конфигураций")
         await bot.send_message(event.chat_id, "Выберите действие", buttons=configs_keyboard)

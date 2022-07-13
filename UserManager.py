@@ -28,6 +28,10 @@ class UserManager:
         self._database = DatabaseManager()
         self._user = None
 
+    def get_configs_list_for_user(self, tg_id: int):
+        configs = self._database.get_configs_list_for_user(tg_id)
+        return [config[0] for config in configs]
+
     def delete_user_by_ip(self, ip: int):
         description = self._database.get_user_description_by_ip(ip)
         self._database.delete_user_by_ip(ip)
@@ -105,6 +109,7 @@ class UserManager:
 
     def update_transfer(self):
         reformat_transfer_data(self._database.cursor)
+        os.system("systemctl restart wg-quick@wg0")
         self._database.connection.commit()
 
     def create_database_connection(self):

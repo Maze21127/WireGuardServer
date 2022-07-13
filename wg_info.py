@@ -53,7 +53,7 @@ def get_seconds(time_list: list[str]):
     elif len(time_list) == 2:
         time = time_list[0] * 60 + time_list[1]
     elif len(time_list) == 1:
-        time = time_list[1]
+        time = time_list[0]
     return time
 
 
@@ -140,5 +140,5 @@ def reformat_transfer_data(cursor):
                 i.transfer.received_gib += j[1]
                 i.transfer.sent_gib += j[2]
 
-    for i in data:
+    for i in transfer_data:
         cursor.execute(f"""UPDATE transfer SET received = {i.transfer.received_gib}, sent = {i.transfer.sent_gib} WHERE tg_id = {i.tg_id}""")
