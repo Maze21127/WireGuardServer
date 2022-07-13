@@ -154,6 +154,7 @@ async def callback(event):
 
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
         await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
+        break
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
