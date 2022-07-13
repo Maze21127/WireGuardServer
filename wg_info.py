@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+import os
 import re
+from dataclasses import dataclass
 from datetime import datetime
 
 
@@ -7,6 +8,13 @@ from datetime import datetime
 class Transfer:
     received_gib: float = 0.0
     sent_gib: float = 0.0
+
+
+@dataclass
+class TransferPerUser:
+    tg_id: int
+    allowed_ips = []
+    transfer: Transfer = Transfer()
 
 
 @dataclass
@@ -85,15 +93,52 @@ def get_users_list(user_list: list):
         users.append(temp)
 
 
-with open("info.txt", "r", encoding="utf-8") as info:
-    data = [line.strip() for line in info.readlines()]
+def reformat_transfer_data(cursor):
+    os.system("wg > info.txt")
+    with open("info.txt", "r", encoding="utf-8") as info:
+        data = [line.strip() for line in info.readlines()]
 
-data = data[5:]
+    data = data[5:]
+
+    users = get_users_list(data)
+
+    cursor.execute(f"""SELECT tg_id, allowed_ip from config order by tg_id""")
+    data = cursor.fetchall()
+
+    tg_id_dict = {tg_id[0]: [] for tg_id in data}
+
+    for i in users:
+        user = get_user(i)
+        for temp in data:
+            if user.allowed_ip == temp[1]:
+                tg_id_dict[temp[0]].append(user.allowed_ip)
 
 
-users = get_users_list(data)
+    transfer_data = []
+    for key in tg_id_dict:
+        temp = TransferPerUser(key)
+        transfer = Transfer()
 
-for i in users:
-    user = get_user(i)
-    print(user)
+        temp_list = []
+        for i in users:
+            user = get_user(i)
+            if user.allowed_ip in tg_id_dict[key]:
+                temp_list.append(user)
 
+        for t in temp_list:
+            transfer.received_gib += t.transfer.received_gib
+            transfer.sent_gib += t.transfer.sent_gib
+        temp.transfer = transfer
+        transfer_data.append(temp)
+
+    cursor.execute("SELECT tg_id, received::float, sent::float from transfer")
+    data = cursor.fetchall()
+
+    for i in transfer_data:
+        for j in data:
+            if j[0] == i.tg_id:
+                i.transfer.received_gib += j[1]
+                i.transfer.sent_gib += j[2]
+
+    for i in data:
+        cursor.execute(f"""UPDATE transfer SET received = {i.transfer.received_gib}, sent = {i.transfer.sent_gib} WHERE tg_id = {i.tg_id}""")

@@ -4,6 +4,7 @@ import os
 import time
 from settings import WG_PUBLIC_KEY, WG_ENDPOINT, WG_PRIVATE_KEY
 from Entities import *
+from wg_info import reformat_transfer_data
 
 
 def get_user_keypair() -> KeyPair:
@@ -101,6 +102,10 @@ class UserManager:
             file.write(f"# {self._user.description}\n")
             file.write(f"PublicKey = {self._user.key_pair.public_key}\n")
             file.write(f"AllowedIPs = 10.0.0.{self._user.allowed_IP}/32\n")
+
+    def update_transfer(self):
+        reformat_transfer_data(self._database.cursor)
+        self._database.connection.commit()
 
     def create_database_connection(self):
         try:

@@ -4,14 +4,18 @@ api_id = 19466009
 api_hash = '997bafd0a9343f21a488fa72cb6a5325'
 
 
-client = TelegramClient("current_session", api_id, api_hash)
+client = TelegramClient("lera", api_id, api_hash)
 
 
 async def main():
 
-    user = await client.get_entity(804339009)
+    user = await client.get_entity(455035418)
     print(user)
-    print(user.username)
+    print(f'{user.id=}')
+    print(f'{user.username=}')
+    print(f'{user.first_name=}')
+    print(f'{user.last_name=}')
+    print(f'{user.phone=}')
 
 
 if __name__ == '__main__':
