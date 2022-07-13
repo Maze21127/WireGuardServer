@@ -49,7 +49,6 @@ configs_keyboard = [
 
 @bot.on(events.NewMessage(pattern="/start"))
 async def start(event):
-    print(event.sender)
     if event.sender.first_name is not None:
         user = event.sender.first_name
     elif event.sender.username is not None:
@@ -90,6 +89,8 @@ async def callback(event):
                         "принято решение, не делать годовую подписку, а ограничиться только ежемесячной\n")
     await event.respond(f"{price_message}\n"
                         "Можно создать до 5 конфигурационных файлов и использовать одновременно на 5 устройствах")
+    if price != 2147483647:
+        await event.respond(f"Функция оплаты подписки через бота появится позже")
     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
 
 
