@@ -83,7 +83,7 @@ class DatabaseManager:
         print(ip)
         self.cursor.execute(f"SELECT publickey, privatekey FROM wg_user WHERE allowed_ip = {ip}")
         data = self.cursor.fetchone()
-        return User(name, KeyPair(public_key=data[0], private_key=data[0]), ip)
+        return User(name, KeyPair(public_key=data[0], private_key=data[1]), ip)
 
     def get_user_active(self, tg_id):
         self.check_connection()

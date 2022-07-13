@@ -60,10 +60,10 @@ class UserManager:
             file.write("PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j "
                        "MASQUERADE\n\n")
 
-    def create_config_file_by_ip(self, ip: int):
-        self._user = self._database.get_user_by_ip(ip)
-        self._create_user_config()
-        print(f"[INFO] config file for user with ip {ip} created successfully")
+    # def create_config_file_by_ip(self, ip: int):
+    #     self._user = self._database.get_user_by_ip(ip)
+    #     self._create_user_config()
+    #     print(f"[INFO] config file for user with ip {ip} created successfully")
 
     def _reformat_config_file(self):
         self._create_config_file()
@@ -94,7 +94,7 @@ class UserManager:
 
         with open(config, "a") as file:
             file.write("[Interface]\n")
-            file.write(f"PrivateKey = {self._user.key_pair.public_key}\n")
+            file.write(f"PrivateKey = {self._user.key_pair.private_key}\n")
             file.write(f"Address = 10.0.0.{self._user.allowed_IP}/32\n")
             file.write("DNS = 8.8.8.8\n\n")
             file.write("[Peer]\n")
