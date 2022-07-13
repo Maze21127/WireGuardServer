@@ -32,7 +32,7 @@ class UserManager:
         configs = self._database.get_configs_list_for_user(tg_id)
         return [config[0] for config in configs]
 
-    def create_user_config_by_name(self, name: str, tg_id: int) -> str:
+    def create_user_config_by_name(self, name: str, tg_id: int) -> (str, str):
         self._user = self._database.get_user_by_name(name, tg_id)
         return self._create_user_config()
 
@@ -73,7 +73,7 @@ class UserManager:
         self.restart_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 
-    def _create_user_config(self) -> str:
+    def _create_user_config(self) -> (str, str):
         config = f'configs/{self._user.config_name}.conf'
 
         f = open(config, "w")
@@ -90,7 +90,9 @@ class UserManager:
             file.write("AllowedIPs = 0.0.0.0/0\n")
             file.write("PersistentKeepalive = 20\n")
 
-        return config
+        os.system(f"qrencode -t png -o {config}_qr.png -r {config}")
+        qr_code = f'{config}_qr.png'
+        return config, qr_code
 
     @staticmethod
     def delete_user_config(config_name: str):

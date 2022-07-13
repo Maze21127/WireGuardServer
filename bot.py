@@ -100,11 +100,11 @@ async def callback(event):
         if answer_message == "Назад":
             await event.respond("Выберите действие", buttons=configs_keyboard)
             break
-        print(answer_message)
-        config = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
+        config, qr_code = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
+        await bot.send_file(event.chat_id, qr_code)
         await bot.send_file(event.chat_id, config)
-            # TODO: Сделать отправку QR-Кода
-            #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
+        break
+        #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
 
 
 @bot.on(events.NewMessage(pattern=create_new_configuration))
@@ -152,9 +152,7 @@ async def callback(event):
             break
 
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
-        await event.respond(f"Конфигурация {answer_message} удалена")
-            # TODO: Сделать отправку QR-Кода
-            #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
+        await event.respond(f"Конфигурация {answer_message} удалена", keyboard=configs_keyboard)
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
@@ -164,7 +162,6 @@ async def callback(event):
 
 @bot.on(events.NewMessage(pattern=support))
 async def callback(event):
-    # TODO: Добавить оповещение об отправленном сообщении
     async with bot.conversation(event.chat_id) as conv:
         await conv.send_message("Введите сообщение, которое будет отправленно администратору",
                                 buttons=Button.text("Отмена", resize=True))
@@ -175,13 +172,13 @@ async def callback(event):
                     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
                     break
                 answer.date = datetime.now()
-                message = f"Сообщение от {answer.chat_id}\n{answer.date.strftime('%d.%m.%y %H:%M:%S')}\n{answer.message}"
+                message = f"Сообщение от {answer.chat_id}\n{answer.date.strftime('%d.%m.%y %H:%M:%S')}\n" \
+                          f"{answer.message}"
                 await bot.send_message(SUPPORT_ID, message)
+                await event.respond("Сообщение в поддержку отправлено")
                 break
             except asyncio.TimeoutError:
                 continue
-
-
 
 
 if __name__ == "__main__":

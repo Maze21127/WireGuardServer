@@ -33,7 +33,9 @@ class DatabaseManager:
 
     def get_all_users(self) -> list[DBUser]:
         self.check_connection()
-        self.cursor.execute(f"SELECT c.*, wg.publickey, wg.privatekey FROM config c LEFT JOIN wg_user wg ON c.allowed_ip=wg.allowed_ip;")
+        self.cursor.execute(f"SELECT c.*, wg.publickey, wg.privatekey "
+                            f"FROM config c "
+                            f"LEFT JOIN wg_user wg ON c.allowed_ip=wg.allowed_ip;")
         data = self.cursor.fetchall()
         users = []
         for user_data in data:
@@ -42,15 +44,18 @@ class DatabaseManager:
                           private_key=user_data[5],
                           ip=user_data[2])
             users.append(user)
-            print(user)
         return users
 
     def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
-        self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES ('{user.key_pair.public_key}',"
-                            f" '{user.key_pair.private_key}', {user.allowed_IP})")
-        self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES('{user.config_name}',"
-                            f" '{user.allowed_IP}', '{tg_id}')")
+        self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES("
+                            f"'{user.key_pair.public_key}',"
+                            f"'{user.key_pair.private_key}',"
+                            f"{user.allowed_IP})")
+        self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES("
+                            f"'{user.config_name}',"
+                            f"'{user.allowed_IP}',"
+                            f"'{tg_id}')")
         self.connection.commit()
 
     def delete_config_by_name(self, name: str, tg_id: int):
@@ -106,12 +111,3 @@ class DatabaseManager:
             self.connection.close()
             self.cursor.close()
             print("[INFO] PostgreSQL connection closed")
-
-
-if __name__ == "__main__":
-    db = DatabaseManager()
-    db.create_connection()
-    users = db.get_all_users()
-    for user in users:
-        print(user)
-    #print(db.get_free_ip())
