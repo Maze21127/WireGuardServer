@@ -48,8 +48,8 @@ class DatabaseManager:
 
     def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
-        self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES ('{user.key_pair.private_key}',"
-                            f" '{user.key_pair.public_key}', {user.allowed_IP})")
+        self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES ('{user.key_pair.public_key}',"
+                            f" '{user.key_pair.private_key}', {user.allowed_IP})")
         print(f"Пользователь {user} добавлен в wg_user")
 
         self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES('{user.config_name}',"
