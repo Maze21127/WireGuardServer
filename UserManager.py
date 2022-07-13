@@ -77,12 +77,11 @@ class UserManager:
         self._user = User(config_name, get_user_keypair(), self._database.get_free_ip())
         print("Пользователь создан")
         print(self._user)
-        #self._create_user_config()
-        #self._reformat_config_file()
-        #print("Файл конфигураций обновлен")
-        #self._add_user_to_config()
+
+        print("Файл конфигураций обновлен")
+#        self._add_user_to_config()
         self._database.create_new_config(self._user, tg_id)
-        return
+        self._reformat_config_file()
         self.update_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 

@@ -48,7 +48,7 @@ class DatabaseManager:
     def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
         print(user.allowed_IP)
-        return
+
         self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES('{user.config_name}',"
                             f" '{user.allowed_IP}', '{tg_id}')")
         print(f"Пользователь {user} добавлен в config")
