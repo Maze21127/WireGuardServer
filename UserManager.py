@@ -43,7 +43,7 @@ class UserManager:
 
     def is_user_active(self, tg_id: int):
         status = self._database.get_user_active(tg_id)
-        return True if status == 't' else False
+        return status
 
     @staticmethod
     def _create_config_file():

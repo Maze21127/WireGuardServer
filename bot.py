@@ -2,7 +2,7 @@ import asyncio
 from datetime import datetime
 from UserManager import UserManager
 from telethon import TelegramClient, events, Button
-
+import re
 from settings import *
 
 bot = TelegramClient("WireGuardVPN", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
@@ -19,6 +19,10 @@ create_new_configuration = "Создать новую конфигурацию"
 delete_configuration = "Удалить конфигурацию"
 main_menu = "Основное меню"
 support = "Написать в поддержку"
+back = "Назад"
+
+black_list = [instruction, payment, configurations, create_configuration, show_configurations, delete_configuration,
+              main_menu, support, back]
 
 keyboard = [
     [
@@ -75,8 +79,7 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=configurations))
 async def callback(event):
     if not manager.is_user_active(event.peer_id.user_id):
-        await bot.send_message(event.chat_id, "Сначала нужно оформить подписку")
-        await event.respond("Выберите действие", buttons=configs_keyboard)
+        await bot.send_message(event.chat_id, "Сначала нужно оформить подписку", buttons=configs_keyboard)
         return
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
@@ -84,10 +87,14 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=show_configurations))
 async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
+
+    if len(configs) == 0:
+        await bot.send_message(event.chat_id, "У вас нет ни одной конфигурации", buttons=configs_keyboard)
+        return
+
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
     await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_buttons)
-    #await bot.delete_messages(event.chat_id, event.message_id)
 
     while True:
         async with bot.conversation(event.chat_id) as conv:
@@ -97,8 +104,8 @@ async def callback(event):
                 answer_message = answer.message
             except asyncio.TimeoutError:
                 answer_message = "Назад"
-        if answer_message == "Назад":
-            await event.respond("Выберите действие", buttons=configs_keyboard)
+        if answer_message in black_list:
+            await event.respond(f"Выберите действие", buttons=configs_keyboard)
             break
         config, qr_code = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
         await bot.send_file(event.chat_id, qr_code)
@@ -111,25 +118,38 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=create_new_configuration))
 async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
+
     if len(configs) == 5:
-        await bot.send_message(event.chat_id, "У вас уже максимальное количество конфигураций")
-        await bot.send_message(event.chat_id, "Выберите действие", buttons=configs_keyboard)
+        await bot.send_message(event.chat_id, "У вас уже максимальное количество конфигураций", buttons=configs_keyboard)
         return
+
     while True:
         async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Введите название (до 12 символов, без пробелов")
-            answer = await conv.get_response()
-            if len(answer.message) > 12:
-                await conv.send_message("Название слишком длинное")
-            else:
+            await conv.send_message("Введите название (Только английские буквы и цифры)")
+            try:
+                answer = await conv.get_response()
                 config_name = answer.message
-                manager.create_new_config(config_name, event.peer_id.user_id)
-                config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
-                await conv.send_message("Файл конфигурации успешно создан")
-                await bot.send_file(event.chat_id, qr_code)
-                await bot.send_file(event.chat_id, config)
-                manager.delete_user_config(config_name)
+            except asyncio.TimeoutError:
+                await event.respond("Выберите действие", buttons=configs_keyboard)
                 break
+
+            if config_name in black_list:
+                await event.respond(f"Выберите действие", buttons=configs_keyboard)
+                break
+
+            if len(config_name) >= 254:
+                await conv.send_message("Название слишком длинное")
+
+            if not re.match(r"^[a-zA-Z0-9]+$", config_name):
+                await conv.send_message("Название содержит пробелы, русские символы или спецсимволы")
+
+            manager.create_new_config(config_name, event.peer_id.user_id)
+            config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
+            await conv.send_message("Файл конфигурации успешно создан")
+            await bot.send_file(event.chat_id, qr_code)
+            await bot.send_file(event.chat_id, config)
+            manager.delete_user_config(config_name)
+            break
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
@@ -146,11 +166,12 @@ async def callback(event):
             try:
                 answer = await conv.get_response()
                 answer_message = answer.message
+                if answer_message in black_list:
+                    await event.respond(f"Хотите узнать что-то еще?", buttons=configs_keyboard)
+                    break
             except asyncio.TimeoutError:
-                answer_message = "Назад"
-        if answer_message == "Назад":
-            await event.respond("Выберите действие", buttons=configs_keyboard)
-            break
+                await event.respond("Выберите действие", buttons=configs_keyboard)
+                break
 
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
         await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
@@ -170,7 +191,7 @@ async def callback(event):
         while True:
             try:
                 answer = await conv.get_response()
-                if answer.message in (instruction, payment, configurations, support, "Отмена"):
+                if answer.message in black_list:
                     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
                     break
                 answer.date = datetime.now()
