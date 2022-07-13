@@ -50,18 +50,16 @@ class DatabaseManager:
         self.check_connection()
         self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES ('{user.key_pair.public_key}',"
                             f" '{user.key_pair.private_key}', {user.allowed_IP})")
-        print(f"Пользователь {user} добавлен в wg_user")
-
         self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES('{user.config_name}',"
                             f" '{user.allowed_IP}', '{tg_id}')")
-        print(f"Пользователь {user} добавлен в config")
+        self.connection.commit()
 
-        # self.cursor.execute(f"INSERT INTO customer(description, publickey, privatekey, last_ip) VALUES"
-        #                     f"("
-        #                     f"'{user.description}',"
-        #                     f"'{user.key_pair.public_key}',"
-        #                     f"'{user.key_pair.private_key}',"
-        #                     f"'{user.allowed_IP}');")
+    def delete_config_by_name(self, name: str, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"SELECT allowed_ip FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
+        ip = self.cursor.fetchone()[0]
+        self.cursor.execute(f"DELETE FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
+        self.cursor.execute(f"DELETE FROM wg_user WHERE allowed_id = {ip}")
         self.connection.commit()
 
     def delete_user_by_ip(self, ip: int):

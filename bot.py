@@ -16,6 +16,7 @@ configurations = "Конфигурации"
 create_configuration = "Создать конфигурационный файл"
 show_configurations = "Показать мои конфигурации"
 create_new_configuration = "Создать новую конфигурацию"
+delete_configuration = "Удалить конфигурацию"
 main_menu = "Основное меню"
 support = "Написать в поддержку"
 
@@ -33,6 +34,7 @@ keyboard = [
 configs_keyboard = [
     [Button.text(show_configurations)],
     [Button.text(create_new_configuration)],
+    [Button.text(delete_configuration)],
     [Button.text(main_menu)]
 ]
 
@@ -124,9 +126,35 @@ async def callback(event):
                 config = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
                 await conv.send_message("Файл конфигурации успешно создан")
                 await bot.send_file(event.chat_id, config)
+                manager.delete_user_config(config_name)
                 # TODO: Создать и отправить файл, с QR-Кодом
                 break
     await event.respond("Выберите действие", buttons=configs_keyboard)
+
+
+@bot.on(events.NewMessage(pattern=delete_configuration))
+async def callback(event):
+    configs = manager.get_configs_list_for_user(event.peer_id.user_id)
+    configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
+    configs_buttons.append([Button.text("Назад", resize=True)])
+    await bot.send_message(event.chat_id, "Выберите конфигурацию для удаления", buttons=configs_buttons)
+
+    while True:
+        async with bot.conversation(event.chat_id) as conv:
+            await conv.send_message("Нажмите на название, чтобы удалить конфигурационный файл")
+            try:
+                answer = await conv.get_response()
+                answer_message = answer.message
+            except asyncio.TimeoutError:
+                answer_message = "Назад"
+        if answer_message == "Назад":
+            await event.respond("Выберите действие", buttons=configs_keyboard)
+            break
+
+        manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
+        await event.respond(f"Конфигурация {answer_message} удалена")
+            # TODO: Сделать отправку QR-Кода
+            #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
 
 
 @bot.on(events.NewMessage(pattern=main_menu))

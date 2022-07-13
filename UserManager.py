@@ -36,11 +36,10 @@ class UserManager:
         self._user = self._database.get_user_by_name(name, tg_id)
         return self._create_user_config()
 
-    def delete_user_by_ip(self, ip: int):
-        description = self._database.get_user_description_by_ip(ip)
-        self._database.delete_user_by_ip(ip)
-        self._delete_user_config(description)
+    def delete_user_config_by_name(self, name: str, tg_id: int):
+        self._database.delete_config_by_name(name, tg_id)
         self._reformat_config_file()
+        self.restart_wireguard()
 
     def is_user_active(self, tg_id: int):
         status = self._database.get_user_active(tg_id)
@@ -60,14 +59,8 @@ class UserManager:
             file.write("PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j "
                        "MASQUERADE\n\n")
 
-    # def create_config_file_by_ip(self, ip: int):
-    #     self._user = self._database.get_user_by_ip(ip)
-    #     self._create_user_config()
-    #     print(f"[INFO] config file for user with ip {ip} created successfully")
-
     def _reformat_config_file(self):
         self._create_config_file()
-        print("Новый файл конфигураций создан")
         for user in self._database.get_all_users():
             key_pair = KeyPair(user.private_key, user.public_key)
             self._user = User(user.config_name, key_pair, user.ip)
@@ -75,15 +68,9 @@ class UserManager:
 
     def create_new_config(self, config_name: str, tg_id: int):
         self._user = User(config_name, get_user_keypair(), self._database.get_free_ip())
-        print("Пользователь создан")
-        print(self._user)
-
-
-#        self._add_user_to_config()
         self._database.create_new_config(self._user, tg_id)
         self._reformat_config_file()
-        print("Файл конфигураций обновлен")
-        self.update_wireguard()
+        self.restart_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 
     def _create_user_config(self) -> str:
@@ -106,13 +93,12 @@ class UserManager:
         return config
 
     @staticmethod
-    def _delete_user_config(config_name: str):
+    def delete_user_config(config_name: str):
         file = f'configs/{config_name}.conf'
-        print(file)
-        if not os.path.exists(file):
-            print("User not already exists")
-            raise FileExistsError("File not exists")
-        os.remove(file)
+        try:
+            os.remove(file)
+        except FileExistsError:
+            return
 
     def _add_user_to_config(self):
         with open("../wg0.conf", "a") as file:
@@ -120,13 +106,14 @@ class UserManager:
             file.write(f"# {self._user.config_name}\n")
             file.write(f"PublicKey = {self._user.key_pair.public_key}\n")
             file.write(f"AllowedIPs = 10.0.0.{self._user.allowed_IP}/32\n")
-        print(f"Пользователь {self._user.config_name} добавлен в файл конфигурации")
 
-    def update_wireguard(self):
-        reformat_transfer_data(self._database.cursor)
+    def restart_wireguard(self):
+        self._update_transfer()
         os.system("systemctl restart wg-quick@wg0")
+
+    def _update_transfer(self):
+        reformat_transfer_data(self._database.cursor)
         self._database.connection.commit()
-        print("Сервер перезагружен и данные трафика обновлены")
 
     def create_database_connection(self):
         try:
