@@ -129,7 +129,6 @@ async def callback(event):
                 await bot.send_file(event.chat_id, qr_code)
                 await bot.send_file(event.chat_id, config)
                 manager.delete_user_config(config_name)
-                # TODO: Создать и отправить файл, с QR-Кодом
                 break
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
@@ -154,7 +153,7 @@ async def callback(event):
             break
 
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
-        await event.respond(f"Конфигурация {answer_message} удалена", keyboard=configs_keyboard)
+        await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
