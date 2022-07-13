@@ -120,7 +120,8 @@ async def callback(event):
                 await conv.send_message("Название слишком длинное")
             else:
                 config_name = answer.message
-                config = manager.create_new_config(config_name, event.peer_id.user_id)
+                manager.create_new_config(config_name, event.peer_id.user_id)
+                config = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
                 await conv.send_message("Файл конфигурации успешно создан")
                 await bot.send_file(event.chat_id, config)
                 # TODO: Создать и отправить файл, с QR-Кодом
