@@ -104,6 +104,7 @@ async def callback(event):
         await bot.send_file(event.chat_id, qr_code)
         await bot.send_file(event.chat_id, config)
         break
+    await event.respond("Выберите действие", buttons=configs_keyboard)
         #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
 
 
