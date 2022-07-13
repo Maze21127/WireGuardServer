@@ -124,8 +124,9 @@ async def callback(event):
             else:
                 config_name = answer.message
                 manager.create_new_config(config_name, event.peer_id.user_id)
-                config = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
+                config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
                 await conv.send_message("Файл конфигурации успешно создан")
+                await bot.send_file(event.chat_id, qr_code)
                 await bot.send_file(event.chat_id, config)
                 manager.delete_user_config(config_name)
                 # TODO: Создать и отправить файл, с QR-Кодом
