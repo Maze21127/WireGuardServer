@@ -92,7 +92,7 @@ class DatabaseManager:
 
     def get_free_ip(self) -> int:
         self.check_connection()
-        self.cursor.execute("SELECT last_ip from customer;")
+        self.cursor.execute("SELECT allowed_ip from wg_user;")
         ips = self.cursor.fetchall()
         using_ip = [ip[0] for ip in ips]
         for i in range(2, 256):
