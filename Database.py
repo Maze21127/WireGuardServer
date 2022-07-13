@@ -33,25 +33,32 @@ class DatabaseManager:
 
     def get_all_users(self) -> list[DBUser]:
         self.check_connection()
-        self.cursor.execute("SELECT description, publickey, privatekey, last_ip FROM customer ORDER BY id;")
+        self.cursor.execute(f"SELECT c.*, wg.publickey, wg.privatekey FROM config c LEFT JOIN wg_user wg ON c.allowed_ip=wg.allowed_ip;")
+        #self.cursor.execute("SELECT description, publickey, privatekey, last_ip FROM customer ORDER BY id;")
         data = self.cursor.fetchall()
         users = []
         for user_data in data:
-            user = DBUser(description=user_data[0],
-                          public_key=user_data[1],
-                          private_key=user_data[2],
-                          ip=user_data[3])
+            user = DBUser(config_name=f"{user_data[3]}/{user_data[1]}",
+                          public_key=user_data[4],
+                          private_key=user_data[5],
+                          ip=user_data[2])
             users.append(user)
         return users
 
-    def add_user(self, user: User):
+    def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
-        self.cursor.execute(f"INSERT INTO customer(description, publickey, privatekey, last_ip) VALUES"
-                            f"("
-                            f"'{user.description}',"
-                            f"'{user.key_pair.public_key}',"
-                            f"'{user.key_pair.private_key}',"
-                            f"'{user.allowed_IP}');")
+        self.cursor.execute(f"INSERT INTO config(name, allowed_ip, tg_id) VALUES('{user.config_name}',"
+                            f" '{user.allowed_IP}', '{tg_id}')")
+        print(f"Пользователь {user} добавлен в config")
+        self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES ('{user.key_pair.public_key}',"
+                            f" '{user.key_pair.private_key}', {user.allowed_IP})")
+        print(f"Пользователь {user} добавлен в wg_user")
+        # self.cursor.execute(f"INSERT INTO customer(description, publickey, privatekey, last_ip) VALUES"
+        #                     f"("
+        #                     f"'{user.description}',"
+        #                     f"'{user.key_pair.public_key}',"
+        #                     f"'{user.key_pair.private_key}',"
+        #                     f"'{user.allowed_IP}');")
         self.connection.commit()
 
     def delete_user_by_ip(self, ip: int):
@@ -65,6 +72,20 @@ class DatabaseManager:
         self.cursor.execute(f"SELECT description, publickey, privatekey, last_ip FROM customer WHERE last_ip = {ip}")
         data = self.cursor.fetchone()
         return User(data[0], KeyPair(public_key=data[1], private_key=data[2]), data[3])
+
+    def get_user_by_name(self, name: str, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"SELECT allowed_ip FROM config WHERE tg_id = {tg_id} AND name = '{name}'")
+        ip = self.cursor.fetchone()[0]
+        print(ip)
+        self.cursor.execute(f"SELECT publickey, privatekey FROM wg_user WHERE allowed_ip = {ip}")
+        data = self.cursor.fetchone()
+        return User(name, KeyPair(public_key=data[0], private_key=data[0]), ip)
+
+    def get_user_active(self, tg_id):
+        self.check_connection()
+        self.cursor.execute(f"SELECT active from tg_user WHERE tg_id = {tg_id}")
+        return self.cursor.fetchone()[0]
 
     def get_free_ip(self) -> int:
         self.check_connection()

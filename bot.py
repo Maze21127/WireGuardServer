@@ -72,6 +72,10 @@ async def callback(event):
 
 @bot.on(events.NewMessage(pattern=configurations))
 async def callback(event):
+    if not manager.is_user_active(event.peer_id.user_id):
+        await bot.send_message(event.chat_id, "Сначала нужно оформить подписку")
+        await event.respond("Выберите действие", buttons=configs_keyboard)
+        return
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
@@ -94,18 +98,17 @@ async def callback(event):
         if answer_message == "Назад":
             await event.respond("Выберите действие", buttons=configs_keyboard)
             break
-        if f"{answer_message}.conf" in configs:
-            await bot.send_file(event.chat_id, f"configs/{answer_message}.conf")
+        print(answer_message)
+        config = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
+        await bot.send_file(event.chat_id, config)
             # TODO: Сделать отправку QR-Кода
             #await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
-        else:
-            return
 
 
 @bot.on(events.NewMessage(pattern=create_new_configuration))
 async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
-    if len(configs) == 1:
+    if len(configs) == 5:
         await bot.send_message(event.chat_id, "У вас уже максимальное количество конфигураций")
         await bot.send_message(event.chat_id, "Выберите действие", buttons=configs_keyboard)
         return
@@ -116,8 +119,10 @@ async def callback(event):
             if len(answer.message) > 12:
                 await conv.send_message("Название слишком длинное")
             else:
-                filename = answer.message
+                config_name = answer.message
+                config = manager.create_new_config(config_name, event.peer_id.user_id)
                 await conv.send_message("Файл конфигурации успешно создан")
+                await bot.send_file(event.chat_id, config)
                 # TODO: Создать и отправить файл, с QR-Кодом
                 break
     await event.respond("Выберите действие", buttons=configs_keyboard)

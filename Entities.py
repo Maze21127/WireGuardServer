@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 @dataclass
 class DBUser:
-    description: str
+    config_name: str
     private_key: str
     public_key: str
     ip: int
@@ -17,6 +17,6 @@ class KeyPair:
 
 @dataclass
 class User:
-    description: str
+    config_name: str
     key_pair: KeyPair
     allowed_IP: int

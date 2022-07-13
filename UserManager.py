@@ -32,11 +32,19 @@ class UserManager:
         configs = self._database.get_configs_list_for_user(tg_id)
         return [config[0] for config in configs]
 
+    def create_user_config_by_name(self, name: str, tg_id: int) -> str:
+        self._user = self._database.get_user_by_name(name, tg_id)
+        return self._create_user_config()
+
     def delete_user_by_ip(self, ip: int):
         description = self._database.get_user_description_by_ip(ip)
         self._database.delete_user_by_ip(ip)
         self._delete_user_config(description)
         self._reformat_config_file()
+
+    def is_user_active(self, tg_id: int):
+        status = self._database.get_user_active(tg_id)
+        return True if status == 't' else False
 
     @staticmethod
     def _create_config_file():
@@ -59,28 +67,31 @@ class UserManager:
 
     def _reformat_config_file(self):
         self._create_config_file()
+        print("Новый файл конфигураций создан")
         for user in self._database.get_all_users():
             key_pair = KeyPair(user.private_key, user.public_key)
-            self._user = User(user.description, key_pair, user.ip)
+            self._user = User(user.config_name, key_pair, user.ip)
             self._add_user_to_config()
 
-    def create_user(self, description: str):
-        self._user = User(description, get_user_keypair(), self._database.get_free_ip())
-        try:
-            self._create_user_config()
-            self._add_user_to_config()
-            self._database.add_user(self._user)
-        except FileExistsError:
-            return
+    def create_new_config(self, config_name: str, tg_id: int):
+        self._user = User(config_name, get_user_keypair(), self._database.get_free_ip())
+        print("Пользователь создан")
+        print(self._user)
+        #self._create_user_config()
+        self._reformat_config_file()
+        print("Файл конфигураций обновлен")
+        #self._add_user_to_config()
+        self._database.create_new_config(self._user, tg_id)
+        self.update_wireguard()
+        return self.create_user_config_by_name(config_name, tg_id)
 
-    def _create_user_config(self):
-        file = f'configs/{self._user.description}.conf'
+    def _create_user_config(self) -> str:
+        config = f'configs/{self._user.config_name}.conf'
 
-        if os.path.exists(file):
-            print("File already exists")
-            raise FileExistsError("File already exists")
+        f = open(config, "w")
+        f.close()
 
-        with open(file, "a") as file:
+        with open(config, "a") as file:
             file.write("[Interface]\n")
             file.write(f"PrivateKey = {self._user.key_pair.private_key}\n")
             file.write(f"Address = 10.0.0.{self._user.allowed_IP}/32\n")
@@ -91,9 +102,11 @@ class UserManager:
             file.write("AllowedIPs = 0.0.0.0/0\n")
             file.write("PersistentKeepalive = 20\n")
 
+        return config
+
     @staticmethod
-    def _delete_user_config(description: str):
-        file = f'configs/{description}.conf'
+    def _delete_user_config(config_name: str):
+        file = f'configs/{config_name}.conf'
         print(file)
         if not os.path.exists(file):
             print("User not already exists")
@@ -103,14 +116,16 @@ class UserManager:
     def _add_user_to_config(self):
         with open("../wg0.conf", "a") as file:
             file.write("\n[Peer]\n")
-            file.write(f"# {self._user.description}\n")
+            file.write(f"# {self._user.config_name}\n")
             file.write(f"PublicKey = {self._user.key_pair.public_key}\n")
             file.write(f"AllowedIPs = 10.0.0.{self._user.allowed_IP}/32\n")
+        print(f"Пользователь {self._user.config_name} добавлен в файл конфигурации")
 
-    def update_transfer(self):
+    def update_wireguard(self):
         reformat_transfer_data(self._database.cursor)
         os.system("systemctl restart wg-quick@wg0")
         self._database.connection.commit()
+        print("Сервер перезагружен и данные трафика обновлены")
 
     def create_database_connection(self):
         try:
