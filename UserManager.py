@@ -78,10 +78,11 @@ class UserManager:
         print("Пользователь создан")
         print(self._user)
 
-        print("Файл конфигураций обновлен")
+
 #        self._add_user_to_config()
         self._database.create_new_config(self._user, tg_id)
         self._reformat_config_file()
+        print("Файл конфигураций обновлен")
         self.update_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 

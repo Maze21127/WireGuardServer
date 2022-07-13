@@ -43,6 +43,7 @@ class DatabaseManager:
                           private_key=user_data[5],
                           ip=user_data[2])
             users.append(user)
+            print(user)
         return users
 
     def create_new_config(self, user: User, tg_id: int):
