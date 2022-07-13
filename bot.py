@@ -11,7 +11,7 @@ manager.create_database_connection()
 
 
 instruction = "Инструкция"
-payment = "Стоимость"
+subscribe = "Подписка"
 configurations = "Конфигурации"
 create_configuration = "Создать конфигурационный файл"
 show_configurations = "Показать мои конфигурации"
@@ -20,14 +20,15 @@ delete_configuration = "Удалить конфигурацию"
 main_menu = "Основное меню"
 support = "Написать в поддержку"
 back = "Назад"
+cancel = "Отмена"
 
-black_list = [instruction, payment, configurations, create_configuration, show_configurations, delete_configuration,
-              main_menu, support, back]
+black_list = [instruction, subscribe, configurations, create_configuration, show_configurations, delete_configuration,
+              main_menu, support, back, cancel]
 
 keyboard = [
     [
         Button.text(instruction, resize=True),
-        Button.text(payment, resize=True)
+        Button.text(subscribe, resize=True)
     ],
     [
         Button.text(configurations, resize=True),
@@ -66,12 +67,16 @@ async def callback(event):
     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
 
 
-@bot.on(events.NewMessage(pattern=payment))
+@bot.on(events.NewMessage(pattern=subscribe))
 async def callback(event):
-    price = 150  # TODO: Стоимость будет браться из базы данных
+    price = manager.get_price_by_id(event.peer_id.user_id)
+    if price == 2147483647:
+        price_message = "У вас неограниченная подписка."
+    else:
+        price_message = f"Стоимость - {price}р в месяц."
     await event.respond("Ввиду того, что государство начало блокировку различных VPN-сервисов, было "
                         "принято решение, не делать годовую подписку, а ограничиться только ежемесячной\n")
-    await event.respond(f"Стоимость - {price}р в месяц.\n"
+    await event.respond(f"{price_message}\n"
                         "Можно создать до 5 конфигурационных файлов и использовать одновременно на 5 устройствах")
     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
 
@@ -139,9 +144,11 @@ async def callback(event):
 
             if len(config_name) >= 254:
                 await conv.send_message("Название слишком длинное")
+                break
 
             if not re.match(r"^[a-zA-Z0-9]+$", config_name):
                 await conv.send_message("Название содержит пробелы, русские символы или спецсимволы")
+                break
 
             manager.create_new_config(config_name, event.peer_id.user_id)
             config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
@@ -195,10 +202,10 @@ async def callback(event):
                     await event.respond(f"Хотите узнать что-то еще?", buttons=keyboard)
                     break
                 answer.date = datetime.now()
-                message = f"Сообщение от {answer.chat_id}\n{answer.date.strftime('%d.%m.%y %H:%M:%S')}\n" \
+                message = f"ID: {answer.peer_id.user_id}\n{answer.date.strftime('%d.%m.%y %H:%M:%S')}\n" \
                           f"{answer.message}"
                 await bot.send_message(SUPPORT_ID, message)
-                await event.respond("Сообщение в поддержку отправлено")
+                await event.respond("Сообщение в поддержку отправлено", buttons=keyboard)
                 break
             except asyncio.TimeoutError:
                 continue

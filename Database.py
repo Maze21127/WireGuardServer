@@ -88,8 +88,14 @@ class DatabaseManager:
 
     def get_user_active(self, tg_id):
         self.check_connection()
-        self.cursor.execute(f"SELECT active from tg_user WHERE tg_id = {tg_id}")
+        self.cursor.execute(f"SELECT active FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
+
+    def get_price_by_id(self, tg_id: int) -> int:
+        self.check_connection()
+        self.cursor.execute(f"SELECT price FROM tg_user WHERE tg_id = {tg_id}")
+        return self.cursor.fetchone()[0]
+
 
     def get_free_ip(self) -> int:
         self.check_connection()

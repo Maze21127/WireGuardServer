@@ -45,6 +45,9 @@ class UserManager:
         status = self._database.get_user_active(tg_id)
         return status
 
+    def get_price_by_id(self, tg_id: int):
+        return self._database.get_price_by_id(tg_id)
+
     @staticmethod
     def _create_config_file():
         """Delete old file and create new with header"""
