@@ -1,8 +1,11 @@
 import asyncio
-from datetime import datetime
-from UserManager import UserManager
-from telethon import TelegramClient, events, Button
 import re
+from datetime import datetime
+
+from telethon import TelegramClient, events, Button
+
+from UserManager import UserManager
+from exceptions import NoFreeIpAddress
 from settings import *
 
 bot = TelegramClient("WireGuardVPN", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
@@ -46,7 +49,16 @@ configs_keyboard = [
 
 @bot.on(events.NewMessage(pattern="/start"))
 async def start(event):
-    await event.respond(f"Привет {event.sender.first_name}, давай я расскажу тебе, как использовать VPN",
+    print(event.sender)
+    if event.sender.first_name is not None:
+        user = event.sender.first_name
+    elif event.sender.username is not None:
+        user = event.sender.username
+    else:
+        user = "Дружище"
+    await event.respond(f"Привет {user}, давай я расскажу тебе, как использовать VPN\n\n"
+                        f"[INFO] БОТ НАХОДИТСЯ В СТАДИИ ТЕСТИРОВАНИЯ.\n"
+                        f"Просьба писать в поддержку в случае любой ошибки",
                         buttons=keyboard)
 
 
@@ -150,7 +162,14 @@ async def callback(event):
                 await conv.send_message("Название содержит пробелы, русские символы или спецсимволы")
                 break
 
-            manager.create_new_config(config_name, event.peer_id.user_id)
+            try:
+                manager.create_new_config(config_name, event.peer_id.user_id)
+            except NoFreeIpAddress:
+                await conv.send_message("Нельзя создать конфигурацию, письмо в поддержку уже отправлено")
+                await bot.send_message(SUPPORT_ID, f"Пользователь {event.peer_id.user_id} не смог получить конфиг,"
+                                                   f"закончились IP-адреса")
+                break
+
             config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
             await conv.send_message("Файл конфигурации успешно создан")
             await bot.send_file(event.chat_id, qr_code)

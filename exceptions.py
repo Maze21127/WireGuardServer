@@ -12,3 +12,8 @@ class NoDatabaseConnection(Exception):
 
 class NoCursor(Exception):
     """Исключение при попытке взаимодействия с неинициализированным курсором"""
+
+
+class NoFreeIpAddress(Exception):
+    """Исключение при отсутсвии свободных адресов"""
+

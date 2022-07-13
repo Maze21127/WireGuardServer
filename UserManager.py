@@ -70,7 +70,11 @@ class UserManager:
             self._add_user_to_config()
 
     def create_new_config(self, config_name: str, tg_id: int):
-        self._user = User(config_name, get_user_keypair(), self._database.get_free_ip())
+        ip = self._database.get_free_ip()
+        if ip == 666:
+            raise NoFreeIpAddress("Ошибка, нет свободных адресов")
+
+        self._user = User(config_name, get_user_keypair(), ip)
         self._database.create_new_config(self._user, tg_id)
         self._reformat_config_file()
         self.restart_wireguard()

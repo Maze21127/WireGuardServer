@@ -66,17 +66,17 @@ class DatabaseManager:
         self.cursor.execute(f"DELETE FROM wg_user WHERE allowed_ip = {ip}")
         self.connection.commit()
 
-    def delete_user_by_ip(self, ip: int):
-        self.check_connection()
-        self.cursor.execute(f"DELETE FROM customer WHERE last_ip = {ip}")
-        self.connection.commit()
-        print(f"User with ip: {ip} was deleted")
-
-    def get_user_by_ip(self, ip: int) -> User:
-        self.check_connection()
-        self.cursor.execute(f"SELECT description, publickey, privatekey, last_ip FROM customer WHERE last_ip = {ip}")
-        data = self.cursor.fetchone()
-        return User(data[0], KeyPair(public_key=data[1], private_key=data[2]), data[3])
+    # def delete_user_by_ip(self, ip: int):
+    #     self.check_connection()
+    #     self.cursor.execute(f"DELETE FROM customer WHERE last_ip = {ip}")
+    #     self.connection.commit()
+    #     print(f"User with ip: {ip} was deleted")
+    #
+    # def get_user_by_ip(self, ip: int) -> User:
+    #     self.check_connection()
+    #     self.cursor.execute(f"SELECT description, publickey, privatekey, last_ip FROM customer WHERE last_ip = {ip}")
+    #     data = self.cursor.fetchone()
+    #     return User(data[0], KeyPair(public_key=data[1], private_key=data[2]), data[3])
 
     def get_user_by_name(self, name: str, tg_id: int):
         self.check_connection()
@@ -86,18 +86,20 @@ class DatabaseManager:
         data = self.cursor.fetchone()
         return User(name, KeyPair(public_key=data[0], private_key=data[1]), ip)
 
-    def get_user_active(self, tg_id):
+    def get_user_active(self, tg_id) -> bool:
+        """Метод для проверки состония подписки пользователя"""
         self.check_connection()
         self.cursor.execute(f"SELECT active FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
 
     def get_price_by_id(self, tg_id: int) -> int:
+        """Метод для получения стоимости подписки пользователя"""
         self.check_connection()
         self.cursor.execute(f"SELECT price FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
 
-
     def get_free_ip(self) -> int:
+        """Метод для получения свободного ip-адреса"""
         self.check_connection()
         self.cursor.execute("SELECT allowed_ip from wg_user;")
         ips = self.cursor.fetchall()
@@ -105,6 +107,7 @@ class DatabaseManager:
         for i in range(2, 256):
             if i not in using_ip:
                 return i
+        return 666
 
     def check_connection(self):
         if self.connection is None:
