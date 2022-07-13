@@ -39,8 +39,8 @@ class DatabaseManager:
         users = []
         for user_data in data:
             user = DBUser(config_name=f"{user_data[3]}/{user_data[1]}",
-                          public_key=user_data[4],
-                          private_key=user_data[5],
+                          public_key=user_data[5],
+                          private_key=user_data[4],
                           ip=user_data[2])
             users.append(user)
             print(user)
