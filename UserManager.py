@@ -94,7 +94,7 @@ class UserManager:
 
         with open(config, "a") as file:
             file.write("[Interface]\n")
-            file.write(f"PrivateKey = {self._user.key_pair.private_key}\n")
+            file.write(f"PrivateKey = {self._user.key_pair.public_key}\n")
             file.write(f"Address = 10.0.0.{self._user.allowed_IP}/32\n")
             file.write("DNS = 8.8.8.8\n\n")
             file.write("[Peer]\n")
