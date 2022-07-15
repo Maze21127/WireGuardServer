@@ -46,6 +46,16 @@ class DatabaseManager:
             users.append(user)
         return users
 
+    def add_new_user(self, tg_user: TgUser):
+        self.check_connection()
+        self.cursor.execute(f"INSERT INTO tg_user("
+                            f"tg_id, active, username, first_name,"
+                            f"last_name, phone, price)"
+                            f"VALUES ({tg_user.tg_id}, {False}, '{tg_user.username}', '{tg_user.first_name}',"
+                            f"'{tg_user.last_name}', '{tg_user.phone}', 150)"
+                            f"ON CONFLICT(tg_id) DO NOTHING ")
+        print(f"Пользователь {tg_user} добавлен в tg_user")
+
     def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
         self.cursor.execute(f"INSERT INTO wg_user(publickey, privatekey, allowed_ip) VALUES("
@@ -82,8 +92,9 @@ class DatabaseManager:
         self.cursor.execute(f"SELECT active FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
 
-    def get_price_by_id(self, tg_id: int) -> int:
+    def get_subscription_info_by_id(self, tg_id: int) -> int:
         """Метод для получения стоимости подписки пользователя"""
+        # TODO: Возвращать количество подписок и дату окончания
         self.check_connection()
         self.cursor.execute(f"SELECT price FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
@@ -91,13 +102,22 @@ class DatabaseManager:
     def get_free_ip(self) -> int:
         """Метод для получения свободного ip-адреса"""
         self.check_connection()
-        self.cursor.execute("SELECT allowed_ip from wg_user;")
+        self.cursor.execute(f"SELECT c.*, wg.publickey, wg.privatekey "
+                            f"FROM config c "
+                            f"LEFT JOIN wg_user wg ON c.allowed_ip=wg.allowed_ip;")
         ips = self.cursor.fetchall()
-        using_ip = [ip[0] for ip in ips]
-        for i in range(2, 256):
-            if i not in using_ip:
+        using_ip = [ip[2] for ip in ips]
+        for i in range(2, 254):
+            if i not in using_ip and i != 3:
                 return i
         return 666
+
+    def get_keys_by_ip(self, ip: int):
+        self.cursor.execute(f"SELECT privatekey, publickey FROM wg_user WHERE allowed_ip = {ip}")
+        keys = self.cursor.fetchone()
+        private_key = keys[0]
+        public_key = keys[1]
+        return KeyPair(private_key, public_key)
 
     def check_connection(self):
         if self.connection is None:

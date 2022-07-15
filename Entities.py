@@ -10,6 +10,15 @@ class DBUser:
 
 
 @dataclass
+class TgUser:
+    tg_id: int
+    username: [str, None]
+    first_name: [str, None]
+    last_name: [str, None]
+    phone: [str, None]
+
+
+@dataclass
 class KeyPair:
     private_key: str
     public_key: str

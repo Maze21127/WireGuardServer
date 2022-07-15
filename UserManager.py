@@ -41,11 +41,14 @@ class UserManager:
         self._reformat_config_file()
         self.restart_wireguard()
 
+    def add_new_user(self, tg_user: TgUser):
+        self._database.add_new_user(tg_user)
+
     def is_user_active(self, tg_id: int):
         status = self._database.get_user_active(tg_id)
         return status
 
-    def get_price_by_id(self, tg_id: int):
+    def get_subscription_info_by_id(self, tg_id: int):
         return self._database.get_price_by_id(tg_id)
 
     @staticmethod
@@ -74,10 +77,11 @@ class UserManager:
         if ip == 666:
             raise NoFreeIpAddress("Ошибка, нет свободных адресов")
 
-        self._user = User(config_name, get_user_keypair(), ip)
+        #self._user = User(config_name, get_user_keypair(), ip)
+        self._user = User(config_name, self._database.get_keys_by_ip(ip), ip)
         self._database.create_new_config(self._user, tg_id)
-        self._reformat_config_file()
-        self.restart_wireguard()
+        #self._reformat_config_file()
+        #self.restart_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 
     def _create_user_config(self) -> (str, str):
@@ -109,7 +113,13 @@ class UserManager:
         except FileExistsError:
             return
 
+    def fill_config_free_users(self):
+        users = self._database.get_all_users()
+        for i in users:
+            print(i)
+
     def _add_user_to_config(self):
+        #  TODO: ../wg0.conf
         with open("../wg0.conf", "a") as file:
             file.write("\n[Peer]\n")
             file.write(f"# {self._user.config_name}\n")
