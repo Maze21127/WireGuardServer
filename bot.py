@@ -444,6 +444,7 @@ async def callback(event):
                 break
         tg_id = answer_message.split("/")[0]
         manager.accept_payment_request(tg_id)
+        await bot.send_message(tg_id, "Ваша заявка была принята, теперь можете создать конфигурацию и использовать")
         await event.respond("Заявка одобрена")
         break
 
