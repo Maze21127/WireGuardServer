@@ -32,9 +32,23 @@ class UserManager:
         configs = self._database.get_configs_list_for_user(tg_id)
         return [config[0] for config in configs]
 
+    def get_payment_requests(self):
+        payments = self._database.get_payment_requests()
+        return payments
+
+    def is_user_have_payment_request(self, tg_id: int):
+        requests = self._database.get_payment_requests_for_user(tg_id)
+        return True if len(requests) == 1 else False
+
+    def create_payment_request(self, tg_id, payment_string):
+        self._database.add_payment_request(tg_id, payment_string)
+
     def create_user_config_by_name(self, name: str, tg_id: int) -> (str, str):
         self._user = self._database.get_user_by_name(name, tg_id)
         return self._create_user_config()
+
+    def accept_payment_request(self, tg_id: int):
+        self._database.accept_payment_request(tg_id)
 
     def delete_user_config_by_name(self, name: str, tg_id: int):
         self._database.delete_config_by_name(name, tg_id)
@@ -48,8 +62,9 @@ class UserManager:
         status = self._database.get_user_active(tg_id)
         return status
 
-    def get_subscription_info_by_id(self, tg_id: int):
-        return self._database.get_price_by_id(tg_id)
+    def get_subscription_info_by_id(self, tg_id: int) -> UserSubscription:
+        return self._database.get_subscription_info_by_id(tg_id)
+
 
     @staticmethod
     def _create_config_file():

@@ -23,8 +23,41 @@ class DatabaseManager:
             print("[INFO] Error while working with PostgreSQL", ex)
 
     def get_configs_list_for_user(self, tg_id: int):
-        self.cursor.execute(f"""SELECT name FROM config WHERE tg_id = {tg_id}""")
+        self.check_connection()
+        self.cursor.execute(f"SELECT name FROM config WHERE tg_id = {tg_id}")
         return self.cursor.fetchall()
+
+    def get_payment_requests(self):
+        self.check_connection()
+        self.cursor.execute(f"SELECT tg_id, timestamp, payment_string FROM payment_request")
+        return self.cursor.fetchall()
+
+    def get_payment_requests_for_user(self, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"SELECT payment_string FROM payment_request where tg_id = {tg_id}")
+        return self.cursor.fetchall()
+
+    def add_payment_request(self, tg_id: int, payment_string: str):
+        self.check_connection()
+        self.cursor.execute(f"INSERT INTO payment_request("
+                            f"tg_id, timestamp, payment_string) "
+                            f"VALUES("
+                            f"{tg_id}, localtimestamp(0), '{payment_string}')")
+        self.connection.commit()
+
+    def accept_payment_request(self, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"DELETE FROM payment_request WHERE tg_id = {tg_id}")
+        self.cursor.execute(f"SELECT subscription_end_date FROM tg_user WHERE tg_id = {tg_id}")
+        date = self.cursor.fetchone()[0]
+        if date is None:
+            self.cursor.execute(f"UPDATE tg_user SET subscription_end_date = "
+                                f"NOW() +INTERVAL '30 DAY', active = true WHERE tg_id = {tg_id}")
+        else:
+            self.cursor.execute(f"UPDATE tg_user SET subscription_end_date = subscription_end_date + "
+                                f"INTERVAL '30 DAY', active = true WHERE tg_id = {tg_id}")
+
+        self.connection.commit()
 
     def get_user_description_by_ip(self, ip) -> str:
         self.check_connection()
@@ -92,12 +125,13 @@ class DatabaseManager:
         self.cursor.execute(f"SELECT active FROM tg_user WHERE tg_id = {tg_id}")
         return self.cursor.fetchone()[0]
 
-    def get_subscription_info_by_id(self, tg_id: int) -> int:
+    def get_subscription_info_by_id(self, tg_id: int) -> UserSubscription:
         """Метод для получения стоимости подписки пользователя"""
-        # TODO: Возвращать количество подписок и дату окончания
         self.check_connection()
-        self.cursor.execute(f"SELECT price FROM tg_user WHERE tg_id = {tg_id}")
-        return self.cursor.fetchone()[0]
+        self.cursor.execute(f"SELECT subscription_end_date, price, max_configs FROM tg_user WHERE tg_id = {tg_id};")
+        data = self.cursor.fetchone()
+        user_subscription = UserSubscription(end_date=data[0], price=data[1], max_configs=data[2])
+        return user_subscription
 
     def get_free_ip(self) -> int:
         """Метод для получения свободного ip-адреса"""
