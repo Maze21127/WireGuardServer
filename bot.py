@@ -438,7 +438,6 @@ async def callback(event):
                 answer = await conv.get_response()
                 answer_message = answer.message
                 if answer_message in black_list:
-                    print("black list")
                     return await event.respond(f"Выберите действие", buttons=admin_panel)
             except asyncio.TimeoutError:
                 await event.respond("Выберите действие", buttons=payments_keyboard)
