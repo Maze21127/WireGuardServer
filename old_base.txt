@@ -17,14 +17,42 @@ insert into wg_user(publickey, privatekey, allowed_ip) values ('kIrYCs5knOQqWjUf
 
 update wg_user SET publickey = 'M3Ow0eFRraeZghi78nbMAuPd49u2Oe76ClCb3R86bWY=', privatekey = '6KFbGdiDfXi2Yf5zrixy0Imds0wTkKMggpqh11qj4Uc=' where allowed_ip = 4;
 
+update tg_user SET first_name = 'Олег', last_name = 'Гамолин', phone = '79510232935' where tg_id = 455035418;
 
+update tg_user SET first_name = 'Витя', phone = '79244214793' where tg_id = 127900156;
 
 
 Добавление пользователя ТГ
-insert into tg_user(tg_id, subscription_end_date, active) values (804339009, NOW() + INTERVAL '29 DAY', true);
+insert into tg_user(tg_id, subscription_end_date, active) values (119360005, NOW() + INTERVAL '10 YEAR', true);
+
+Добавление данных
+update tg_user SET, username = 'Midved', first_name = 'Константин', last_name = 'Кульков', phone = 
+'79510232935' where tg_id = 119360005;
+
+update tg_user SET, username = 'Midved', first_name = 'Константин', last_name = 'Кульков' where tg_id = 119360005;
 
 Добавление в таблицу конфига
-insert into config(name, allowed_ip, tg_id) values ('iPhone', 4, 804339009);
+insert into config(name, allowed_ip, tg_id) values ('iPhone', 9, 119360005);
 
 Таблица name, allowed_ip, tg_id, publickey, privatekey
 select c.*, wg.publickey, wg.privatekey from config c left join wg_user wg on c.allowed_ip=wg.allowed_ip;
+
+insert into tg_user(tg_id, subscription_end_date, active, username, first_name, last_name, phone, price, max_configs) VALUES(1214900768, '2022-07-19', true, 'testname', 'testname2', 'testname3', '7999999999', 150, 3) ON CONFLICT (tg_id) DO NOTHING;
+
+update tg_user SET max_configs = 10 where tg_id = 1214900768;
+
+update tg_user SET username = 'None' where tg_id = 455035418;
+
+
+create table payment_request(id serial, tg_id integer, timestamp timestamp, payment_string varchar(255));
+
+insert into payment_request(tg_id, timestamp, payment_string) values (123, localtimestamp(2), 'test');
+
+
+
+update tg_user SET subscription_end_date = NOW() + INTERVAL '30 DAY', active = true where tg_id = 1214900768;
+
+UPDATE (SELECT active FROM tg_user where tg_id = 1214900768)
+
+
+UPDATE tg_User SET (subscription_end_date = NOW() + INTERVAL '30 DAY' WHERE subscription_end_date = null)

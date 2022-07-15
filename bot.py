@@ -281,10 +281,12 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=configurations))
 async def callback(event):
     if not manager.is_user_active(event.peer_id.user_id):
+        print(
+            f"{datetime.datetime.now()} >> {event.sender.id} получил сообщение о том, что сначала нужно оформить "
+            f"подписку")
         return await bot.send_message(event.chat_id, "Сначала нужно оформить подписку",
                                       buttons=get_keyboard(event.peer_id.user_id))
     await event.respond("Выберите действие", buttons=configs_keyboard)
-    print(f"{datetime.datetime.now()} >> {event.sender.id} получил сообщение о том, что сначала нужно оформить подписку")
 
 
 @bot.on(events.NewMessage(pattern=show_configurations))
