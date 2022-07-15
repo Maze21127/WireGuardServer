@@ -139,6 +139,7 @@ async def start(event):
                         f"[INFO] БОТ НАХОДИТСЯ В СТАДИИ ТЕСТИРОВАНИЯ.\n"
                         f"Просьба писать в поддержку в случае любой ошибки",
                         buttons=get_keyboard(tg_user.tg_id))
+    print(f"{datetime.datetime.now()} >> {tg_user.tg_id} нажал /start")
 
 
 @bot.on(events.NewMessage(pattern=instruction))
@@ -156,14 +157,14 @@ async def callback(event):
     ])
     await event.respond(f"Для Android инструкция аналогична")
     await event.respond(f"Хотите узнать что-то еще?", buttons=get_keyboard(event.sender.id))
+    print(f"{datetime.datetime.now()} >> {event.sender.id} нажал Инструкция")
 
 
 @bot.on(events.NewMessage(pattern=price_button))
 async def callback(event):
     user_subscription: UserSubscription = manager.get_subscription_info_by_id(event.peer_id.user_id)
-    print(user_subscription)
     if user_subscription.price == 2147483647:
-        price_message = "У вас неограниченная подписка."
+        price_message = "У вас неограниченная подписка.\n"
     else:
         price_message = f"**Стоимость - {user_subscription.price}р в месяц.**\n"
 
@@ -181,6 +182,7 @@ async def callback(event):
     #     await event.respond(f"Функция оплаты подписки через бота появится позже")
 
     await event.respond("Выберите действие", buttons=subscribe_keyboard)
+    print(f"{datetime.datetime.now()} >> {event.sender.id} нажал Информация")
 
 
 # @bot.on(events.Raw(types.UpdateNewMessage))
@@ -226,6 +228,7 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=subscribe))
 async def callback(event):
     await event.respond("Выберите действие", buttons=subscribe_keyboard)
+    print(f"{datetime.datetime.now()} >> {event.sender.id} нажал Подписка")
 
 
 @bot.on(events.NewMessage(pattern=start_subscribe))
@@ -237,6 +240,7 @@ async def callback(event):
         return
 
     if manager.is_user_have_payment_request(event.peer_id.user_id):
+        print(f"{datetime.datetime.now()} >> {event.sender.id} попытался сделать еще одну заявку")
         return await event.respond("У вас уже есть неоплаченная заявка", buttons=subscribe_keyboard)
 
     random_string = get_payment_string()
@@ -251,7 +255,9 @@ async def callback(event):
                         f"указав в описании следуюую строку", buttons=subscribe_keyboard)
     await event.respond(
         f"{payment_string}", buttons=subscribe_keyboard)
+
     manager.create_payment_request(event.message.peer_id.user_id, random_string)
+    print(f"{datetime.datetime.now()} >> {event.sender.id} Создал заявку на оплату")
 
     # await bot.send_message(event.chat_id, "Сначала нужно оформить подписку", buttons=configs_keyboard)
 
@@ -278,6 +284,7 @@ async def callback(event):
         return await bot.send_message(event.chat_id, "Сначала нужно оформить подписку",
                                       buttons=get_keyboard(event.peer_id.user_id))
     await event.respond("Выберите действие", buttons=configs_keyboard)
+    print(f"{datetime.datetime.now()} >> {event.sender.id} получил сообщение о том, что сначала нужно оформить подписку")
 
 
 @bot.on(events.NewMessage(pattern=show_configurations))
@@ -286,15 +293,19 @@ async def callback(event):
 
     if len(configs) == 0:
         await bot.send_message(event.chat_id, "У вас нет ни одной конфигурации", buttons=configs_keyboard)
+        print(
+            f"{datetime.datetime.now()} >> {event.sender.id} получил сообщение о том, что у него нет конфигураций")
         return
 
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
     await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_buttons)
 
+
     while True:
         async with bot.conversation(event.chat_id) as conv:
             await conv.send_message("Нажмите на название, чтобы получить конфигурационный файл")
+            print(f"{datetime.datetime.now()} >> {event.sender.id} нажал на просмотр конфигураций")
             try:
                 answer = await conv.get_response()
                 answer_message = answer.message
@@ -306,6 +317,7 @@ async def callback(event):
         config, qr_code = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
         await bot.send_file(event.chat_id, qr_code)
         await bot.send_file(event.chat_id, config)
+        print(f"{datetime.datetime.now()} >> {event.sender.id} получил конфигурацию")
         break
     await event.respond("Выберите действие", buttons=configs_keyboard)
     # await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_keyboard)
@@ -314,8 +326,10 @@ async def callback(event):
 @bot.on(events.NewMessage(pattern=create_new_configuration))
 async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
+    limit = manager.get_subscription_info_by_id(event.peer_id.user_id)
 
-    if len(configs) == 5:
+    if len(configs) == limit.max_configs:
+        print(f"{datetime.datetime.now()} >> {event.sender.id} получил сообщение о максимуме конфигураций")
         await bot.send_message(event.chat_id, "У вас уже максимальное количество конфигураций",
                                buttons=configs_keyboard)
         return
@@ -340,6 +354,7 @@ async def callback(event):
 
             if not re.match(r"^[a-zA-Z0-9]+$", config_name):
                 await conv.send_message("Название содержит пробелы, русские символы или спецсимволы")
+                print(f"{datetime.datetime.now()} >> {event.sender.id} ввел неверное название конфигурации")
                 break
 
             try:
@@ -355,6 +370,7 @@ async def callback(event):
             await bot.send_file(event.chat_id, qr_code)
             await bot.send_file(event.chat_id, config)
             print(f"Файл конфигурации отправлен пользователю {event.peer_id.user_id}")
+            print(f"{datetime.datetime.now()} >> {event.sender.id} создал и получил новый конфигурационный файл")
             manager.delete_user_config(config_name)
             break
     await event.respond("Выберите действие", buttons=configs_keyboard)
@@ -366,7 +382,7 @@ async def callback(event):
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
     await bot.send_message(event.chat_id, "Выберите конфигурацию для удаления", buttons=configs_buttons)
-
+    print(f"{datetime.datetime.now()} >> {event.sender.id} захотел удалить конфигурационный файл")
     while True:
         async with bot.conversation(event.chat_id) as conv:
             await conv.send_message("Нажмите на название, чтобы удалить конфигурационный файл")
@@ -383,12 +399,14 @@ async def callback(event):
         manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
         await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
         print(f"Файл конфигурации {answer_message} удален пользователем {event.peer_id.user_id}")
+        print(f"{datetime.datetime.now()} >> {event.sender.id} успешно удалил конфигурационный файл {answer_message}")
         break
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
 async def callback(event):
     await event.respond(f"Хотите узнать что-то еще?", buttons=get_keyboard(event.sender.id))
+    print(f"{datetime.datetime.now()} >> {event.sender.id} попал в главное меню")
 
 
 @bot.on(events.NewMessage(pattern=admin))
@@ -449,6 +467,7 @@ async def callback(event):
                           f"{answer.message}"
                 await bot.send_message(SUPPORT_ID, message)
                 await event.respond("Сообщение в поддержку отправлено", buttons=get_keyboard(event.sender.id))
+                print(f"{datetime.datetime.now()} >> {event.sender.id} отправил сообщение в поддержку")
                 break
             except asyncio.TimeoutError:
                 continue
