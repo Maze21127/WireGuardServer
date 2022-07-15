@@ -135,7 +135,7 @@ async def start(event):
         user = event.sender.username
     else:
         user = "Дружище"
-    await event.respond(f"Привет {user}, давай я расскажу тебе, как использовать VPN\n\n"
+    await event.respond(f"Привет, {user}, давай я расскажу тебе, как использовать VPN\n\n"
                         f"[INFO] БОТ НАХОДИТСЯ В СТАДИИ ТЕСТИРОВАНИЯ.\n"
                         f"Просьба писать в поддержку в случае любой ошибки",
                         buttons=get_keyboard(tg_user.tg_id))
@@ -252,7 +252,7 @@ async def callback(event):
 
     await bot.send_message(SUPPORT_ID, message)
     await event.respond(f"Переведите {user_subscription.price} RUB по номеру {SBERBANK_NUMBER}, "
-                        f"указав в описании следуюую строку", buttons=subscribe_keyboard)
+                        f"указав в описании следующую строку", buttons=subscribe_keyboard)
     await event.respond(
         f"{payment_string}", buttons=subscribe_keyboard)
 

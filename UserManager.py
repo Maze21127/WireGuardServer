@@ -92,11 +92,11 @@ class UserManager:
         if ip == 666:
             raise NoFreeIpAddress("Ошибка, нет свободных адресов")
 
-        #self._user = User(config_name, get_user_keypair(), ip)
-        self._user = User(config_name, self._database.get_keys_by_ip(ip), ip)
+        self._user = User(config_name, get_user_keypair(), ip)
+        #self._user = User(config_name, self._database.get_keys_by_ip(ip), ip)
         self._database.create_new_config(self._user, tg_id)
-        #self._reformat_config_file()
-        #self.restart_wireguard()
+        self._reformat_config_file()
+        self.restart_wireguard()
         return self.create_user_config_by_name(config_name, tg_id)
 
     def _create_user_config(self) -> (str, str):
