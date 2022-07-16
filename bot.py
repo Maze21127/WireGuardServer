@@ -108,12 +108,19 @@ admin_panel = [
     ]
 ]
 
+# configs_keyboard = [
+#     [Button.text(show_configurations)],
+#     [Button.text(create_new_configuration)],
+#     [Button.text(delete_configuration)],
+#     [Button.text(main_menu)]
+# ]
+
 configs_keyboard = [
     [Button.text(show_configurations)],
     [Button.text(create_new_configuration)],
-    [Button.text(delete_configuration)],
     [Button.text(main_menu)]
 ]
+
 
 subscribe_keyboard = [
     [Button.text(price_button, resize=True)],
