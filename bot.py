@@ -263,6 +263,7 @@ async def callback(event):
                         f"указав в описании следующую строку", buttons=subscribe_keyboard)
     await event.respond(
         f"{payment_string}", buttons=subscribe_keyboard)
+    await event.respond(f"Если доступ не появится в течении 5 минут после оплаты - пожалуйста, напишите в поддержку")
 
     manager.create_payment_request(event.message.peer_id.user_id, random_string)
     logger.info(f"{event.sender.id} создал заявку на оплату")
@@ -454,9 +455,8 @@ async def callback(event):
 
     tg_id = answer_message.split("/")[0]
     manager.accept_payment_request(tg_id)
-    await bot.send_message(tg_id, "Ваша заявка была принята, теперь можете создать конфигурацию и использовать")
-    await event.respond("Заявка одобрена")
-    await event.respond(f"Выберите действие", buttons=admin_panel)
+    await event.respond("Заявка одобрена", buttons=admin_panel)
+    #await event.respond(f"Выберите действие")
 
 
 @bot.on(events.NewMessage(pattern="/support"))
