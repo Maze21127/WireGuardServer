@@ -413,6 +413,7 @@ async def callback(event):
             except asyncio.TimeoutError:
                 await event.respond("Выберите действие", buttons=configs_keyboard)
                 break
+        break
 
     while True:
         async with bot.conversation(event.chat_id) as conv:
@@ -437,7 +438,7 @@ async def callback(event):
 
     manager.rename_configuration_by_name(old_name, config_name, event.peer_id.user_id)
         #manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
-    await event.respond(f"Конфигурация {old_name} теперь называется config_name", buttons=configs_keyboard)
+    await event.respond(f"Конфигурация {old_name} теперь называется {config_name}", buttons=configs_keyboard)
     logger.info(f"{event.sender.id} изменил название у конфиг файла {old_name}")
 
 
