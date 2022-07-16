@@ -87,7 +87,6 @@ class DatabaseManager:
                             f"VALUES ({tg_user.tg_id}, {False}, '{tg_user.username}', '{tg_user.first_name}',"
                             f"'{tg_user.last_name}', '{tg_user.phone}', 150)"
                             f"ON CONFLICT(tg_id) DO NOTHING ")
-        print(f"Пользователь {tg_user} добавлен в tg_user")
 
     def create_new_config(self, user: User, tg_id: int):
         self.check_connection()
