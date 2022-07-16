@@ -59,6 +59,8 @@ class DatabaseManager:
 
         self.connection.commit()
 
+
+
     def get_user_description_by_ip(self, ip) -> str:
         self.check_connection()
         self.cursor.execute(f"SELECT description FROM customer WHERE last_ip = {ip}")
@@ -100,6 +102,11 @@ class DatabaseManager:
                             f"'{tg_id}')")
         self.connection.commit()
         print(f"Config {user.config_name}/{tg_id} создан")
+
+    def rename_configuration_by_name(self, old_name: str, new_name: str, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"UPDATE config SET name = '{new_name}' WHERE name = '{old_name}' AND tg_id = {tg_id}")
+        self.connection.commit()
 
     def delete_config_by_name(self, name: str, tg_id: int):
         self.check_connection()

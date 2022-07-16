@@ -50,6 +50,9 @@ class UserManager:
     def accept_payment_request(self, tg_id: int):
         self._database.accept_payment_request(tg_id)
 
+    def rename_configuration_by_name(self, old_name: str, new_name: str, tg_id: int):
+        self._database.rename_configuration_by_name(old_name, new_name, tg_id)
+
     def delete_user_config_by_name(self, name: str, tg_id: int):
         self._database.delete_config_by_name(name, tg_id)
         self._reformat_config_file()

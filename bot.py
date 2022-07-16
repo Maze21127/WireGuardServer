@@ -65,7 +65,7 @@ configurations = "Конфигурации"
 create_configuration = "Создать конфигурационный файл"
 show_configurations = "Показать мои конфигурации"
 create_new_configuration = "Создать новую конфигурацию"
-delete_configuration = "Удалить конфигурацию"
+rename_configuration = "Переименовать конфигурацию"
 main_menu = "Основное меню"
 support = "Написать в поддержку"
 back = "Назад"
@@ -75,7 +75,7 @@ price_button = "Информация"
 admin = "Админ"
 payment_requests = "Заявки на оплату"
 
-black_list = [instruction, subscribe, configurations, create_configuration, show_configurations, delete_configuration,
+black_list = [instruction, subscribe, configurations, create_configuration, show_configurations, rename_configuration,
               main_menu, support, back, cancel, start_subscribe, price_button, '/support', admin, payment_requests]
 
 keyboard = [
@@ -108,18 +108,18 @@ admin_panel = [
     ]
 ]
 
-# configs_keyboard = [
-#     [Button.text(show_configurations)],
-#     [Button.text(create_new_configuration)],
-#     [Button.text(delete_configuration)],
-#     [Button.text(main_menu)]
-# ]
-
 configs_keyboard = [
     [Button.text(show_configurations)],
     [Button.text(create_new_configuration)],
+    [Button.text(rename_configuration)],
     [Button.text(main_menu)]
 ]
+
+# configs_keyboard = [
+#     [Button.text(show_configurations)],
+#     [Button.text(create_new_configuration)],
+#     [Button.text(main_menu)]
+# ]
 
 
 subscribe_keyboard = [
@@ -393,30 +393,53 @@ async def callback(event):
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
-@bot.on(events.NewMessage(pattern=delete_configuration))
+@bot.on(events.NewMessage(pattern=rename_configuration))
 async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
-    await bot.send_message(event.chat_id, "Выберите конфигурацию для удаления", buttons=configs_buttons)
-    logger.info(f'{event.sender.id} решил удалить конфиг файл')
+    await bot.send_message(event.chat_id, "Выберите конфигурацию для переименования", buttons=configs_buttons)
+    logger.info(f'{event.sender.id} решил переименовать конфиг файл')
 
     while True:
         async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Нажмите на название, чтобы удалить конфигурационный файл")
+            await conv.send_message("Нажмите на название, чтобы переименовать конфигурационный файл")
             try:
                 answer = await conv.get_response()
-                answer_message = answer.message
-                if answer_message in black_list:
+                old_name = answer.message
+                if old_name in black_list:
                     await event.respond(f"Хотите узнать что-то еще?", buttons=configs_keyboard)
                     break
             except asyncio.TimeoutError:
                 await event.respond("Выберите действие", buttons=configs_keyboard)
                 break
-        manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
-        await event.respond(f"Конфигурация {answer_message} удалена", buttons=configs_keyboard)
-        logger.info(f"{event.sender.id} удалил конфиг файл {answer_message}")
+
+    while True:
+        async with bot.conversation(event.chat_id) as conv:
+            await conv.send_message("Введите название (Только английские буквы и цифры)")
+            try:
+                answer = await conv.get_response()
+                config_name = answer.message
+
+            except asyncio.TimeoutError:
+                logger.debug(f"{event.sender.id} TimeoutError")
+                return await event.respond("Выберите действие", buttons=configs_keyboard)
+            if config_name in black_list:
+                return await event.respond(f"Выберите действие", buttons=configs_keyboard)
+            if len(config_name) >= 254:
+                logger.debug(f"{event.sender.id} ввел слишком длинное название конфигурации")
+                return await event.respond("Название слишком длинное", buttons=configs_keyboard)
+            if not re.match(r"^[a-zA-Z0-9]+$", config_name):
+                logger.debug(f"{event.sender.id} ввел неверное название конфигурации")
+                return await conv.send_message("Название содержит пробелы, русские символы или спецсимволы",
+                                               buttons=configs_keyboard)
         break
+
+    manager.rename_configuration_by_name(old_name, config_name, event.peer_id.user_id)
+        #manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
+    await event.respond(f"Конфигурация {old_name} теперь называется config_name", buttons=configs_keyboard)
+    logger.info(f"{event.sender.id} изменил название у конфиг файла {old_name}")
+
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
