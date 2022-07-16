@@ -376,7 +376,7 @@ async def callback(event):
         return await event.respond("Нельзя создать конфигурацию, письмо в поддержку уже отправлено")
 
     config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
-    await conv.send_message("Файл конфигурации успешно создан")
+    await bot.send_message(event.chat_id, "Файл конфигурации успешно создан")
     await bot.send_file(event.chat_id, qr_code)
     await bot.send_file(event.chat_id, config)
     logger.info(f"{event.sender.id} создал и получил новый конфиг файл")
