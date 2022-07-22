@@ -66,6 +66,11 @@ class UserManager:
         status = self._database.get_user_active(tg_id)
         return status if status is not None else False
 
+    def deactivate_user(self, tg_id: int):
+        self._database.deactivate_user(tg_id)
+        self._reformat_config_file()
+        self.restart_wireguard()
+
     def get_subscription_info_by_id(self, tg_id: int) -> UserSubscription:
         return self._database.get_subscription_info_by_id(tg_id)
 
@@ -169,4 +174,7 @@ if __name__ == "__main__":
         manager = UserManager()
         manager.create_database_connection()
 
-        manager._reformat_config_file()
+        s = manager._database.get_all_active_users()
+
+
+        #manager._reformat_config_file()

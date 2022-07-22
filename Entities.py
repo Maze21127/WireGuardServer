@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import datetime
 
+
 @dataclass
 class DBUser:
     config_name: str
@@ -20,9 +21,10 @@ class TgUser:
 
 @dataclass
 class UserSubscription:
+    tg_id: int
     end_date: datetime.date
-    price: int
-    max_configs: int
+    price: int = 150
+    max_configs: int = 3
 
 
 @dataclass

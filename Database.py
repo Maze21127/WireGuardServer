@@ -80,7 +80,7 @@ class DatabaseManager:
         return users
 
     def get_all_active_users(self) -> list[DBUser]:
-        """Метод для получения всех активных пользователей"""
+        """Метод для получения всех активных пользователей в виде DBUser"""
         self.check_connection()
         self.cursor.execute(f"SELECT wg.publickey, wg.privatekey, active.tg_id, active.allowed_ip, active.name "
                             f"FROM wg_user wg "
@@ -156,8 +156,21 @@ class DatabaseManager:
         self.check_connection()
         self.cursor.execute(f"SELECT subscription_end_date, price, max_configs FROM tg_user WHERE tg_id = {tg_id};")
         data = self.cursor.fetchone()
-        user_subscription = UserSubscription(end_date=data[0], price=data[1], max_configs=data[2])
+        user_subscription = UserSubscription(tg_id=tg_id, end_date=data[0], price=data[1], max_configs=data[2])
         return user_subscription
+
+    def get_all_users_subscriptions_info(self):
+        self.check_connection()
+        self.cursor.execute("SELECT tg_id, subscription_end_date FROM tg_user WHERE subscription_end_date IS NOT NULL "
+                            "ORDER BY subscription_end_date DESC")
+        data = self.cursor.fetchall()
+        user_subscriptions = [UserSubscription(tg_id=i[0], end_date=i[1]) for i in data]
+        return user_subscriptions
+
+    def deactivate_user(self, tg_id: int):
+        self.check_connection()
+        self.cursor.execute(f"UPDATE tg_user SET active = false, subscription_end_date = null WHERE tg_id = {tg_id}")
+        self.connection.commit()
 
     def get_free_ip(self) -> int:
         """Метод для получения свободного ip-адреса"""
