@@ -28,16 +28,19 @@ class DatabaseManager:
         return self.cursor.fetchall()
 
     def get_payment_requests(self):
+        """[ONLY FOR ADMIN] Метод для получения заявок на оплату"""
         self.check_connection()
         self.cursor.execute(f"SELECT tg_id, timestamp, payment_string FROM payment_request")
         return self.cursor.fetchall()
 
     def get_payment_requests_for_user(self, tg_id: int):
+        """Метод для получения заявок у конкретного пользователя, для предотвращения создания больше одной заявки"""
         self.check_connection()
         self.cursor.execute(f"SELECT payment_string FROM payment_request where tg_id = {tg_id}")
         return self.cursor.fetchall()
 
     def add_payment_request(self, tg_id: int, payment_string: str):
+        """Добавляет заявку на оплату для пользователя"""
         self.check_connection()
         self.cursor.execute(f"INSERT INTO payment_request("
                             f"tg_id, timestamp, payment_string) "
@@ -46,25 +49,20 @@ class DatabaseManager:
         self.connection.commit()
 
     def accept_payment_request(self, tg_id: int):
+        """[ONLY FOR ADMIN] Метод для принятия заявки на оплату"""
         self.check_connection()
         self.cursor.execute(f"DELETE FROM payment_request WHERE tg_id = {tg_id}")
         self.cursor.execute(f"SELECT subscription_end_date FROM tg_user WHERE tg_id = {tg_id}")
         date = self.cursor.fetchone()[0]
+        #  Если подписки не было, добавляем 30 дней от текущего, если была, тогда к имеющейся дате.
         if date is None:
             self.cursor.execute(f"UPDATE tg_user SET subscription_end_date = "
-                                f"NOW() +INTERVAL '30 DAY', active = true WHERE tg_id = {tg_id}")
+                                f"NOW() + INTERVAL '30 DAY', active = true WHERE tg_id = {tg_id}")
         else:
             self.cursor.execute(f"UPDATE tg_user SET subscription_end_date = subscription_end_date + "
                                 f"INTERVAL '30 DAY', active = true WHERE tg_id = {tg_id}")
 
         self.connection.commit()
-
-
-
-    def get_user_description_by_ip(self, ip) -> str:
-        self.check_connection()
-        self.cursor.execute(f"SELECT description FROM customer WHERE last_ip = {ip}")
-        return self.cursor.fetchone()[0]
 
     def get_all_users(self) -> list[DBUser]:
         self.check_connection()
@@ -78,6 +76,26 @@ class DatabaseManager:
                           public_key=user_data[4],
                           private_key=user_data[5],
                           ip=user_data[2])
+            users.append(user)
+        return users
+
+    def get_all_active_users(self) -> list[DBUser]:
+        """Метод для получения всех активных пользователей"""
+        self.check_connection()
+        self.cursor.execute(f"SELECT wg.publickey, wg.privatekey, active.tg_id, active.allowed_ip, active.name "
+                            f"FROM wg_user wg "
+                            f"LEFT JOIN"
+                            f"  (SELECT c.name, c.allowed_ip, tg.active, tg.tg_id "
+                            f"  FROM config c "
+                            f"  LEFT JOIN tg_user tg ON c.tg_id=tg.tg_id) "
+                            f"active ON active.allowed_ip=wg.allowed_ip WHERE active.active = true;")
+        data = self.cursor.fetchall()
+        users = []
+        for user_data in data:
+            user = DBUser(config_name=f"{user_data[2]}/{user_data[4]}",
+                          public_key=user_data[0],
+                          private_key=user_data[1],
+                          ip=user_data[3])
             users.append(user)
         return users
 
@@ -110,6 +128,7 @@ class DatabaseManager:
         self.connection.commit()
 
     def delete_config_by_name(self, name: str, tg_id: int):
+        """На данный момент не используется"""
         self.check_connection()
         self.cursor.execute(f"SELECT allowed_ip FROM config WHERE name = '{name}' AND tg_id = {tg_id}")
         ip = self.cursor.fetchone()[0]

@@ -54,6 +54,7 @@ class UserManager:
         self._database.rename_configuration_by_name(old_name, new_name, tg_id)
 
     def delete_user_config_by_name(self, name: str, tg_id: int):
+        """Удаление конфига пользователя по имени и айди, сейчас не используется"""
         self._database.delete_config_by_name(name, tg_id)
         self._reformat_config_file()
         self.restart_wireguard()
@@ -63,15 +64,14 @@ class UserManager:
 
     def is_user_active(self, tg_id: int):
         status = self._database.get_user_active(tg_id)
-        return status
+        return status if status is not None else False
 
     def get_subscription_info_by_id(self, tg_id: int) -> UserSubscription:
         return self._database.get_subscription_info_by_id(tg_id)
 
-
     @staticmethod
     def _create_config_file():
-        """Delete old file and create new with header"""
+        """Удаление старого файла и создания нового с заголовком"""
         os.remove("../wg0.conf")
         with open("../wg0.conf", "a") as file:
             file.write("[Interface]\n")
@@ -85,7 +85,7 @@ class UserManager:
 
     def _reformat_config_file(self):
         self._create_config_file()
-        for user in self._database.get_all_users():
+        for user in self._database.get_all_active_users():
             key_pair = KeyPair(user.private_key, user.public_key)
             self._user = User(user.config_name, key_pair, user.ip)
             self._add_user_to_config()
@@ -132,6 +132,7 @@ class UserManager:
             return
 
     def fill_config_free_users(self):
+        """Метод для заполнения конфиг файла ключами еще не существующих пользователей"""
         users = self._database.get_all_users()
         for i in users:
             print(i)
@@ -161,3 +162,11 @@ class UserManager:
         except NoCursor as ex:
             print("[INFO] ", ex)
             return
+
+
+if __name__ == "__main__":
+    if __name__ == "__main__":
+        manager = UserManager()
+        manager.create_database_connection()
+
+        manager._reformat_config_file()
