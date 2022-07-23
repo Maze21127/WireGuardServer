@@ -41,6 +41,16 @@ async def get_config_name_from_user(event: events.newmessage.NewMessage.Event):
     return config_name
 
 
+async def send_config(config_name: str, event: events.newmessage.NewMessage.Event):
+    config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
+    await bot.send_message(event.chat_id, "Файл конфигурации успешно создан")
+    await bot.send_file(event.chat_id, qr_code)
+    await bot.send_file(event.chat_id, config)
+    logger.info(f"{event.sender.id} создал и получил новый конфиг файл")
+    manager.delete_user_config(config_name)
+    logger.info(f"{config_name}.conf удален")
+
+
 @bot.on(events.NewMessage(pattern="/start"))
 async def start(event):
     user = event.sender
@@ -153,33 +163,27 @@ async def callback(event):
     configs = manager.get_configs_list_for_user(event.peer_id.user_id)
 
     if len(configs) == 0:
-        logger.debug(f"{event.sender.id} получил сообщение о том, у него нет конфигураций")
-        return await bot.send_message(event.chat_id, "У вас нет ни одной конфигурации", buttons=configs_keyboard)
+        logger.debug(f"{event.peer_id.id} получил сообщение о том, у него нет конфигураций")
+        return await event.respond("У вас нет ни одной конфигурации", buttons=configs_keyboard)
 
     configs_buttons = [[Button.text(name.split(".conf")[0], resize=True)] for name in configs]
     configs_buttons.append([Button.text("Назад", resize=True)])
-    await bot.send_message(event.chat_id, "Выберите конфигурацию", buttons=configs_buttons)
 
-    while True:
-        async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Нажмите на название, чтобы получить конфигурационный файл")
-            logger.info(f"{event.sender.id} смотрит конфигурации")
+    await event.respond("Выберите конфигурацию", buttons=configs_buttons)
 
-            try:
-                answer = await conv.get_response()
-                answer_message = answer.message
-            except asyncio.TimeoutError:
-                logger.debug(f"{event.sender.id} TimeoutError")
-                return await event.respond(f"Выберите действие", buttons=configs_buttons)
+    async with bot.conversation(event.chat_id) as conv:
+        await conv.send_message("Нажмите на название, чтобы получить конфигурационный файл")
+        logger.info(f"{event.sender.id} смотрит конфигурации")
+        try:
+            answer = await conv.get_response()
+            config_name = answer.message
+        except asyncio.TimeoutError:
+            logger.debug(f"{event.sender.id} TimeoutError")
+            return await event.respond(f"Выберите действие", buttons=configs_buttons)
+    if config_name in black_list:
+        return await event.respond(f"Выберите действие", buttons=configs_keyboard)
 
-        if answer_message in black_list:
-            await event.respond(f"Выберите действие", buttons=configs_keyboard)
-            break
-        config, qr_code = manager.create_user_config_by_name(answer_message, event.peer_id.user_id)
-        await bot.send_file(event.chat_id, qr_code)
-        await bot.send_file(event.chat_id, config)
-        logger.info(f"{event.sender.id} получил конфигурационный файл")
-        break
+    await send_config(config_name, event)
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
@@ -207,15 +211,7 @@ async def callback(event):
                                            f"закончились IP-адреса")
         return await event.respond("Нельзя создать конфигурацию, письмо в поддержку уже отправлено")
 
-    # TODO: Вынести это в отдельную функцию
-    config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
-    await bot.send_message(event.chat_id, "Файл конфигурации успешно создан")
-    await bot.send_file(event.chat_id, qr_code)
-    await bot.send_file(event.chat_id, config)
-    logger.info(f"{event.sender.id} создал и получил новый конфиг файл")
-    manager.delete_user_config(config_name)
-    logger.info(f"{config_name}.conf удален")
-
+    await send_config(config_name, event)
     await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
@@ -227,19 +223,17 @@ async def callback(event):
     await bot.send_message(event.chat_id, "Выберите конфигурацию для переименования", buttons=configs_buttons)
     logger.info(f'{event.sender.id} решил переименовать конфиг файл')
 
-    while True:
-        async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Нажмите на название, чтобы переименовать конфигурационный файл")
-            try:
-                answer = await conv.get_response()
-                old_name = answer.message
-                if old_name in black_list:
-                    await event.respond(f"Хотите узнать что-то еще?", buttons=configs_keyboard)
-                    break
-            except asyncio.TimeoutError:
-                await event.respond("Выберите действие", buttons=configs_keyboard)
-                break
-        break
+    async with bot.conversation(event.chat_id) as conv:
+        await conv.send_message("Нажмите на название, чтобы переименовать конфигурационный файл")
+        try:
+            answer = await conv.get_response()
+            old_name = answer.message
+            if old_name in black_list:
+                return await event.respond(f"Хотите узнать что-то еще?", buttons=configs_keyboard)
+            if old_name not in configs:
+                return await event.respond(f"Ошибка, нет такого конфига", buttons=configs_keyboard)
+        except asyncio.TimeoutError:
+            return await event.respond("Выберите действие", buttons=configs_keyboard)
 
     config_name = await get_config_name_from_user(event)
     if config_name is None:
@@ -268,16 +262,13 @@ async def callback(event):
                                       resize=True)] for payment in payments]
     payments_keyboard.append([Button.text("Основное меню", resize=True)])
 
-    while True:
-        async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Выберите заявку для подтверждения", buttons=payments_keyboard)
-
-            try:
-                answer = await conv.get_response()
-                answer_message = answer.message
-                break
-            except asyncio.TimeoutError:
-                return await event.respond("Выберите действие", buttons=payments_keyboard)
+    async with bot.conversation(event.chat_id) as conv:
+        await conv.send_message("Выберите заявку для подтверждения", buttons=payments_keyboard)
+        try:
+            answer = await conv.get_response()
+            answer_message = answer.message
+        except asyncio.TimeoutError:
+            return await event.respond("Выберите действие", buttons=payments_keyboard)
 
     if answer_message in black_list:
         return await event.respond(f"Выберите действие", buttons=admin_panel)
