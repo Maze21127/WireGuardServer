@@ -4,6 +4,18 @@ from dotenv import load_dotenv
 
 load_dotenv('.env')
 
+# Dev True/False
+DEV = getenv("DEV")
+
+# Токен бота Telegram
+BOT_TOKEN_PROD = getenv("BOT_TOKEN_PROD")
+BOT_TOKEN_DEV = getenv("BOT_TOKEN_DEV")
+
+if DEV:
+    BOT_TOKEN = BOT_TOKEN_DEV
+else:
+    BOT_TOKEN = BOT_TOKEN_PROD
+
 # IP-Адресс базы данных PostgreSQL
 DB_HOST = getenv('DB_HOST')
 # Логин пользователя базы данных
@@ -22,8 +34,8 @@ WG_ENDPOINT = getenv("WG_ENDPOINT")
 API_ID = int(getenv('API_ID'))
 # Api Hash Telegram
 API_HASH = getenv("API_HASH")
-# Токен бота Telegram
-BOT_TOKEN = getenv("BOT_TOKEN")
+
+
 # Токен бота для оплаты
 PAYMENT_BOT_TOKEN = getenv("PAYMENT_BOT_TOKEN")
 # Тестовый токен оплаты Сбербанк
@@ -34,3 +46,4 @@ SBERBANK_NUMBER = getenv("SBERBANK_NUMBER")
 SUPPORT_ID = int(getenv("SUPPORT_ID"))
 # TG_ID админа
 ADMIN_ID = int(getenv("ADMIN_ID"))
+
