@@ -1,9 +1,9 @@
 import asyncio
 import random
 import re
-import logging
+from logger import logger
 
-from telethon import TelegramClient, events, Button, types
+from telethon import TelegramClient, events, Button
 
 from Entities import *
 from UserManager import UserManager
@@ -47,13 +47,6 @@ def get_payment_string() -> str:
 #         # start_param will be passed with UpdateBotPrecheckoutQuery,
 #         # I don't really know why is it needed, I guess like payload.
 #     )
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-fh = logging.FileHandler("logs/logs.txt")
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-fh.setFormatter(formatter)
-logger.addHandler(fh)
 
 bot = TelegramClient("WireGuardVPN_newBot", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 manager = UserManager()
@@ -185,18 +178,11 @@ async def callback(event):
         if user_subscription.end_date is not None:
             price_message += f"**Ваша подписка действует до {user_subscription.end_date.strftime('%d.%m.%y')}\n"
 
-    # await event.respond("Ввиду того, что государство начало блокировку различных VPN-сервисов, было "
-    #                     "принято решение, не делать годовую подписку, а ограничиться только ежемесячной\n")
     await event.respond(f"{price_message}"
                         f"Максимальное количество устройств - {user_subscription.max_configs}.\n"
                         f"На каждом устройстве необходимо использовать свой конфигурационный файл.")
 
-    # Если подписка не бесконечная
-    # if user_subscription.price != 2147483647:
-    #     await event.respond(f"Функция оплаты подписки через бота появится позже")
-
     await event.respond("Выберите действие", buttons=subscribe_keyboard)
-
     logger.info(f"{event.sender.id} нажал Информация")
 
 
@@ -382,6 +368,7 @@ async def callback(event):
                                            f"закончились IP-адреса")
         return await event.respond("Нельзя создать конфигурацию, письмо в поддержку уже отправлено")
 
+    # TODO: Вынести это в отдельную функцию
     config, qr_code = manager.create_user_config_by_name(config_name, event.peer_id.user_id)
     await bot.send_message(event.chat_id, "Файл конфигурации успешно создан")
     await bot.send_file(event.chat_id, qr_code)
@@ -415,6 +402,7 @@ async def callback(event):
                 break
         break
 
+    # TODO: Вынести в отдельную функцию
     while True:
         async with bot.conversation(event.chat_id) as conv:
             await conv.send_message("Введите название (Только английские буквы и цифры)")
@@ -437,10 +425,8 @@ async def callback(event):
         break
 
     manager.rename_configuration_by_name(old_name, config_name, event.peer_id.user_id)
-        #manager.delete_user_config_by_name(answer_message, event.peer_id.user_id)
     await event.respond(f"Конфигурация {old_name} теперь называется {config_name}", buttons=configs_keyboard)
     logger.info(f"{event.sender.id} изменил название у конфиг файла {old_name}")
-
 
 
 @bot.on(events.NewMessage(pattern=main_menu))
@@ -468,8 +454,6 @@ async def callback(event):
                                       resize=True)] for payment in payments]
     payments_keyboard.append([Button.text("Основное меню", resize=True)])
 
-    # await bot.send_message(event.chat_id, "Выберите заявку для подтверждения", buttons=payments_keyboard)
-
     while True:
         async with bot.conversation(event.chat_id) as conv:
             await conv.send_message("Выберите заявку для подтверждения", buttons=payments_keyboard)
@@ -479,7 +463,7 @@ async def callback(event):
                 answer_message = answer.message
                 break
             except asyncio.TimeoutError:
-                return event.respond("Выберите действие", buttons=payments_keyboard)
+                return await event.respond("Выберите действие", buttons=payments_keyboard)
 
     if answer_message in black_list:
         return await event.respond(f"Выберите действие", buttons=admin_panel)
@@ -487,7 +471,6 @@ async def callback(event):
     tg_id = answer_message.split("/")[0]
     manager.accept_payment_request(tg_id)
     await event.respond("Заявка одобрена", buttons=admin_panel)
-    #await event.respond(f"Выберите действие")
 
 
 @bot.on(events.NewMessage(pattern="/support"))
