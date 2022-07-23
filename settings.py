@@ -5,8 +5,7 @@ from dotenv import load_dotenv
 load_dotenv('.env')
 
 # Dev True/False
-DEV = getenv("DEV")
-
+DEV = True if getenv("DEV") == "True" else False
 # Токен бота Telegram
 BOT_TOKEN_PROD = getenv("BOT_TOKEN_PROD")
 BOT_TOKEN_DEV = getenv("BOT_TOKEN_DEV")
@@ -23,6 +22,9 @@ DB_NAME_PROD = getenv("DB_NAME_PROD")
 
 
 if DEV:
+    print(123)
+    print(type(DEV))
+    print(DEV)
     BOT_TOKEN = BOT_TOKEN_DEV
     DB_NAME = DB_NAME_DEV
 else:
