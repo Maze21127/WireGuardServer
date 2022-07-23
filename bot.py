@@ -1,13 +1,13 @@
 import asyncio
 import random
 import re
-from logger import logger
 
 from telethon import TelegramClient, events, Button
 
 from Entities import *
 from UserManager import UserManager
 from exceptions import NoFreeIpAddress
+from logger import logger
 from settings import *
 
 
@@ -48,7 +48,7 @@ def get_payment_string() -> str:
 #         # I don't really know why is it needed, I guess like payload.
 #     )
 
-bot = TelegramClient("WireGuardVPN_newBot", API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+bot = TelegramClient(SESSION, API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 manager = UserManager()
 manager.create_database_connection()
 

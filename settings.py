@@ -9,6 +9,8 @@ DEV = True if getenv("DEV") == "True" else False
 # Токен бота Telegram
 BOT_TOKEN_PROD = getenv("BOT_TOKEN_PROD")
 BOT_TOKEN_DEV = getenv("BOT_TOKEN_DEV")
+SESSION_PROD = getenv("SESSION_PROD")
+SESSION_DEV = getenv("SESSION_DEV")
 
 # IP-Адресс базы данных PostgreSQL
 DB_HOST = getenv('DB_HOST')
@@ -22,14 +24,13 @@ DB_NAME_PROD = getenv("DB_NAME_PROD")
 
 
 if DEV:
-    print(123)
-    print(type(DEV))
-    print(DEV)
     BOT_TOKEN = BOT_TOKEN_DEV
     DB_NAME = DB_NAME_DEV
+    SESSION = SESSION_DEV
 else:
     BOT_TOKEN = BOT_TOKEN_PROD
     DB_NAME = DB_NAME_PROD
+    SESSION = SESSION_PROD
 
 # Публичный ключ WireGuard
 WG_PUBLIC_KEY = getenv("WG_PUBLIC_KEY")
