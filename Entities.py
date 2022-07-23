@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 import datetime
 
 
@@ -38,3 +39,12 @@ class User:
     config_name: str
     key_pair: KeyPair
     allowed_IP: int
+
+
+class ConfigNameStatus(Enum):
+    LONG_STATUS = "Название слишком длинное"
+    TIMEOUT = "TimeoutError"
+    BLACK_LIST = "Black List"
+    BAD_NAME = "Название содержит пробелы, русские символы или спецсимволы"
+
+

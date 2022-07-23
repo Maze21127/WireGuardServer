@@ -17,27 +17,38 @@ manager = UserManager()
 manager.create_database_connection()
 
 
-async def get_config_name_from_user(event: events.newmessage.NewMessage.Event):
+async def get_answer_from_user(event: events.newmessage.NewMessage.Event):
     while True:
         async with bot.conversation(event.chat_id) as conv:
-            await conv.send_message("Введите название (Только английские буквы и цифры)")
+            await conv.send_message("Введите название (Только английские буквы и цифры)", buttons=input_config_keyboard)
             try:
                 answer = await conv.get_response()
                 config_name = answer.message
 
             except asyncio.TimeoutError:
                 logger.debug(f"{event.sender.id} TimeoutError")
-                return None
+                return ConfigNameStatus.TIMEOUT
             if config_name in black_list:
-                return None
+                return ConfigNameStatus.BLACK_LIST
             if len(config_name) >= 254:
                 logger.debug(f"{event.sender.id} ввел слишком длинное название конфигурации")
-                return None
+                return ConfigNameStatus.LONG_STATUS
             if not re.match(r"^[a-zA-Z0-9]+$", config_name):
                 logger.debug(f"{event.sender.id} ввел неверное название конфигурации")
-                return await conv.send_message("Название содержит пробелы, русские символы или спецсимволы",
-                                               buttons=configs_keyboard)
+                return ConfigNameStatus.BAD_NAME
         break
+    return config_name
+
+
+async def get_config_name_from_user(event: events.newmessage.NewMessage.Event):
+    config_name = await get_answer_from_user(event)
+    if config_name == ConfigNameStatus.BAD_NAME:
+        return await event.respond("Название содержит пробелы, русские символы или спецсимволы",
+                                   buttons=configs_keyboard)
+    elif config_name == ConfigNameStatus.LONG_STATUS:
+        return await event.respond("Слишком длинное название", buttons=configs_keyboard)
+    elif isinstance(config_name, ConfigNameStatus):
+        return await event.respond("Выберите действие", buttons=configs_keyboard)
     return config_name
 
 
@@ -199,8 +210,8 @@ async def callback(event):
                                       buttons=configs_keyboard)
 
     config_name = await get_config_name_from_user(event)
-    if config_name is None:
-        return await event.respond("Выберите действие", buttons=configs_keyboard)
+    if not isinstance(config_name, str):
+        return
 
     try:
         manager.create_new_config(config_name, event.peer_id.user_id)
@@ -236,8 +247,8 @@ async def callback(event):
             return await event.respond("Выберите действие", buttons=configs_keyboard)
 
     config_name = await get_config_name_from_user(event)
-    if config_name is None:
-        return await event.respond("Выберите действие", buttons=configs_keyboard)
+    if not isinstance(config_name, str):
+        return
 
     manager.rename_configuration_by_name(old_name, config_name, event.peer_id.user_id)
     await event.respond(f"Конфигурация {old_name} теперь называется {config_name}", buttons=configs_keyboard)

@@ -65,6 +65,9 @@ configs_keyboard = [
     [Button.text(main_menu)]
 ]
 
+input_config_keyboard = [
+    [Button.text(back, resize=True)]
+]
 
 subscribe_keyboard = [
     [Button.text(price_button, resize=True)],
