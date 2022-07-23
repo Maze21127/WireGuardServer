@@ -11,11 +11,6 @@ DEV = getenv("DEV")
 BOT_TOKEN_PROD = getenv("BOT_TOKEN_PROD")
 BOT_TOKEN_DEV = getenv("BOT_TOKEN_DEV")
 
-if DEV:
-    BOT_TOKEN = BOT_TOKEN_DEV
-else:
-    BOT_TOKEN = BOT_TOKEN_PROD
-
 # IP-Адресс базы данных PostgreSQL
 DB_HOST = getenv('DB_HOST')
 # Логин пользователя базы данных
@@ -23,7 +18,17 @@ DB_USER = getenv("DB_USER")
 # Пароль пользователя базы данных
 DB_PASSWORD = getenv("DB_PASSWORD")
 # Имя базы данных
-DB_NAME = getenv("DB_NAME")
+DB_NAME_DEV = getenv("DB_NAME_DEV")
+DB_NAME_PROD = getenv("DB_NAME_PROD")
+
+
+if DEV:
+    BOT_TOKEN = BOT_TOKEN_DEV
+    DB_NAME = DB_NAME_DEV
+else:
+    BOT_TOKEN = BOT_TOKEN_PROD
+    DB_NAME = DB_NAME_PROD
+
 # Публичный ключ WireGuard
 WG_PUBLIC_KEY = getenv("WG_PUBLIC_KEY")
 # Приватный ключ WireGuard
