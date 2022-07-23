@@ -1,133 +1,20 @@
 import asyncio
-import random
 import re
 
-from telethon import TelegramClient, events, Button
+from telethon import TelegramClient, events
+from telethon.tl.types import InputFile
 
 from Entities import *
-from UserManager import UserManager
+from UserManager import UserManager, get_payment_string
 from exceptions import NoFreeIpAddress
+from keyboards import *
 from logger import logger
 from settings import *
 
 
-def get_payment_string() -> str:
-    chars = '+-/*!&$#?=@<>abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
-    LENGTH = 16
-    return "".join([random.choice(chars) for _ in range(LENGTH)])
-
-
-# Функция для генерации сообщения с оплатой
-# def generate_invoice(price_label: str, price_amount: int, currency: str, title: str,
-#                      description: str, payload: str, start_param: str) -> types.InputMediaInvoice:
-#     price = types.LabeledPrice(label=price_label, amount=price_amount)  # label - just a text, amount=10000 means 100.00
-#     invoice = types.Invoice(
-#         currency=currency,  # currency like USD
-#         prices=[price],  # there could be a couple of prices.
-#         test=True,  # if you're working with test token
-#
-#         #  next params are saying for themselves
-#         name_requested=False,
-#         phone_requested=False,
-#         email_requested=False,
-#         shipping_address_requested=False,
-#         flexible=False,
-#         phone_to_provider=False,
-#         email_to_provider=False
-#     )
-#
-#     return types.InputMediaInvoice(
-#         title=title,
-#         description=description,
-#         invoice=invoice,
-#         payload=payload.encode("UTF-8"),  # payload, which will be sent to next 2 handlers
-#         provider=SBERBANK_TEST_TOKEN,
-#         provider_data=types.DataJSON("{}"),  # honestly, no idea.
-#         start_param=start_param,
-#         # start_param will be passed with UpdateBotPrecheckoutQuery,
-#         # I don't really know why is it needed, I guess like payload.
-#     )
-
 bot = TelegramClient(SESSION, API_ID, API_HASH).start(bot_token=BOT_TOKEN)
 manager = UserManager()
 manager.create_database_connection()
-
-instruction = "Инструкция"
-subscribe = "Подписка"
-configurations = "Конфигурации"
-create_configuration = "Создать конфигурационный файл"
-show_configurations = "Показать мои конфигурации"
-create_new_configuration = "Создать новую конфигурацию"
-rename_configuration = "Переименовать конфигурацию"
-main_menu = "Основное меню"
-support = "Написать в поддержку"
-back = "Назад"
-cancel = "Отмена"
-start_subscribe = "Оплатить подписку"
-price_button = "Информация"
-admin = "Админ"
-payment_requests = "Заявки на оплату"
-
-black_list = [instruction, subscribe, configurations, create_configuration, show_configurations, rename_configuration,
-              main_menu, support, back, cancel, start_subscribe, price_button, '/support', admin, payment_requests]
-
-keyboard = [
-    [
-        Button.text(instruction, resize=True),
-        Button.text(subscribe, resize=True)
-    ],
-    [
-        Button.text(configurations, resize=True),
-    ]
-]
-
-admin_keyboard = [
-    [
-        Button.text(instruction, resize=True),
-        Button.text(subscribe, resize=True)
-    ],
-    [
-        Button.text(configurations, resize=True),
-    ],
-    [
-        Button.text(admin, resize=True),
-    ]
-]
-
-admin_panel = [
-    [
-        Button.text(payment_requests, resize=True),
-        Button.text(main_menu, resize=True)
-    ]
-]
-
-configs_keyboard = [
-    [Button.text(show_configurations)],
-    [Button.text(create_new_configuration)],
-    [Button.text(rename_configuration)],
-    [Button.text(main_menu)]
-]
-
-# configs_keyboard = [
-#     [Button.text(show_configurations)],
-#     [Button.text(create_new_configuration)],
-#     [Button.text(main_menu)]
-# ]
-
-
-subscribe_keyboard = [
-    [Button.text(price_button, resize=True)],
-    [Button.text(start_subscribe, resize=True)],
-    [Button.text(main_menu, resize=True)],
-
-]
-
-
-def get_keyboard(tg_id: int) -> list:
-    if tg_id == ADMIN_ID:
-        return admin_keyboard
-    else:
-        return keyboard
 
 
 @bot.on(events.NewMessage(pattern="/start"))
@@ -156,11 +43,17 @@ async def callback(event):
                                           ".android)\n"
                                           "2. Скачать ваш конфигурационный файл\n"
                                           "3. Добавить его в приложение", link_preview=False, buttons=Button.clear())
-    await bot.send_file(event.chat_id, [
-        "Screenshots/import_tunnel.jpg",
-        "Screenshots/from_file.jpg",
-        "Screenshots/allow_vpn.jpg"
-    ])
+
+    p1 = InputFile(id=-5542220640839749743, parts=1, name='import_tunnel.jpg',
+                   md5_checksum='87a9b840f3d41ae1514350b1dd8ada54')
+    p2 = InputFile(id=-4996295696130465348, parts=1, name='from_file.jpg',
+                   md5_checksum='2fb415298a43e43ec0c9f9252708334a')
+    p3 = InputFile(id=-1813564566477447057, parts=1, name='allow_vpn.jpg',
+                   md5_checksum='dd6da8f0d831140c4ffcaac942786c32')
+
+    result = await bot.send_file(event.chat_id, [p1, p2, p3])
+    print(result)
+
     await event.respond(f"Для Android инструкция аналогична")
     await event.respond(f"Хотите узнать что-то еще?", buttons=get_keyboard(event.sender.id))
 
@@ -184,46 +77,6 @@ async def callback(event):
 
     await event.respond("Выберите действие", buttons=subscribe_keyboard)
     logger.info(f"{event.sender.id} нажал Информация")
-
-
-# @bot.on(events.Raw(types.UpdateNewMessage))
-# async def payment_received_handler(event):
-#     if isinstance(event.message.action, types.MessageActionPaymentSentMe):
-#         payment: types.MessageActionPaymentSentMe = event.message.action
-#         print(payment)
-#         print(event.message.peer_id.user_id)
-#         print("Оплата прошла")
-#         if payment.payload.decode("UTF-8") == '1MonthSubscribe':
-#             await bot.send_message(event.message.peer_id.user_id, "Спасибо за оплату подписки,"
-#                                                                   "теперь вы можете получить конфиг")
-#
-#         raise events.StopPropagation
-
-
-#
-# @bot.on(events.Raw(types.UpdateBotPrecheckoutQuery))
-# async def payment_pre_checkout_handler(event: types.UpdateBotPrecheckoutQuery):
-#     if event.payload.decode("UTF-8") == '1MonthSubscribe':
-#         #  so we have to confirm payment
-#         await bot(
-#             functions.messages.SetBotPrecheckoutResultsRequest(
-#                 query_id=event.query_id,
-#                 success=True,
-#                 error=None
-#             )
-#         )
-#
-#     else:
-#         # for example, something went wrong (whatever reason). We can tell customer about that:
-#         await bot(
-#             functions.messages.SetBotPrecheckoutResultsRequest(
-#                 query_id=event.query_id,
-#                 success=False,
-#                 error="Что-то пошло не так, пожалуйста, напишите в поддержку"
-#             )
-#         )
-#
-#     raise events.StopPropagation
 
 
 @bot.on(events.NewMessage(pattern=subscribe))
@@ -260,24 +113,6 @@ async def callback(event):
 
     manager.create_payment_request(event.message.peer_id.user_id, random_string)
     logger.info(f"{event.sender.id} создал заявку на оплату")
-
-    # await bot.send_message(event.chat_id, "Сначала нужно оформить подписку", buttons=configs_keyboard)
-
-    # await event.respond("Выберите действие", buttons=configs_keyboard)
-
-
-# @bot.on(events.NewMessage(pattern=start_subscribe))
-# async def callback(event):
-#     user_subscription: UserSubscription = manager.get_subscription_info_by_id(event.peer_id.user_id)
-#     if user_subscription.price == 2147483647:
-#         await event.respond("У вас неограниченная подписка, ничего оплачивать не нужно", buttons=subscribe_keyboard)
-#         return
-#     file = generate_invoice("Pay", user_subscription.price, "RUB", "Подписка", "Подписка на 1 месяц",
-#                             "1MonthSubscribe", "abc")
-#     await bot.send_file(event.chat_id, file)
-#     # await bot.send_message(event.chat_id, "Сначала нужно оформить подписку", buttons=configs_keyboard)
-#
-#     # await event.respond("Выберите действие", buttons=configs_keyboard)
 
 
 @bot.on(events.NewMessage(pattern=configurations))
@@ -435,13 +270,6 @@ async def callback(event):
     logger.info(f"{event.sender.id} попал в главное меню")
 
 
-@bot.on(events.NewMessage(pattern=admin))
-async def callback(event):
-    if event.sender.id != ADMIN_ID:
-        return await event.respond(f"У вас нет доступа", buttons=get_keyboard(event.sender.id))
-    await event.respond(f"Выберите действие", buttons=admin_panel)
-
-
 @bot.on(events.NewMessage(pattern=payment_requests))
 async def callback(event):
     if event.sender.id != ADMIN_ID:
@@ -471,6 +299,13 @@ async def callback(event):
     tg_id = answer_message.split("/")[0]
     manager.accept_payment_request(tg_id)
     await event.respond("Заявка одобрена", buttons=admin_panel)
+
+
+@bot.on(events.NewMessage(pattern=admin))
+async def callback(event):
+    if event.sender.id != ADMIN_ID:
+        return await event.respond(f"У вас нет доступа", buttons=get_keyboard(event.sender.id))
+    await event.respond(f"Выберите действие", buttons=admin_panel)
 
 
 @bot.on(events.NewMessage(pattern="/support"))

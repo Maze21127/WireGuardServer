@@ -1,3 +1,5 @@
+import random
+
 from Database import DatabaseManager
 from exceptions import *
 import os
@@ -21,6 +23,12 @@ def get_user_keypair() -> KeyPair:
     os.remove(f"temp_pubkey{timestamp}")
 
     return KeyPair(private_key, public_key)
+
+
+def get_payment_string() -> str:
+    chars = '+-/*!&$#?=@<>abcdefghijklnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890'
+    LENGTH = 16
+    return "".join([random.choice(chars) for _ in range(LENGTH)])
 
 
 class UserManager:
